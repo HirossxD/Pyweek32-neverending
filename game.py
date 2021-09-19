@@ -22,6 +22,7 @@ class Tent(Actor):
         super().__init__('tent')
         self.x = WIDTH / 2
         self.y = HEIGHT / 2
+
 class Bug(Actor):
     def __init__(self):
         super().__init__('bug')
@@ -49,6 +50,7 @@ class Gamestate(StateMachine):
     play = menu.to(game)
     def on_play(self):
         print('starting game')
+        tents_y = 0
     def on_start(self):
         print('initmenu')
 
@@ -88,17 +90,7 @@ class Gamestate(StateMachine):
                 elif selectbars[0].y == optionbars[-1].y:
                     exit()
         if self.is_game:
-            if keyboard.space:
-                if not keypressed:
-                    for tent in tents:
-                        tent.x -= 80
-                    tents.append(Tent())
-                    for tent in tents:
-                        tent.x += 20
 
-                    keypressed = True
-            else:
-                keypressed = False
             for bug in enemies:
                 bug.update()
     def draw(self):

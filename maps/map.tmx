@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="2021.03.23" orientation="orthogonal" renderorder="right-down" width="9" height="8" tilewidth="128" tileheight="128" infinite="0" nextlayerid="5" nextobjectid="14">
+ <tileset firstgid="1" source="../../../../background.tsx"/>
+ <layer id="1" name="background" width="9" height="8">
+  <data encoding="csv">
+25,25,25,25,25,25,25,25,25,
+25,25,25,25,25,25,25,25,25,
+25,25,25,25,25,25,25,25,25,
+25,25,25,25,25,25,25,25,25,
+25,25,25,25,25,25,25,25,25,
+25,25,25,25,25,25,25,25,25,
+25,25,25,25,25,25,25,25,25,
+25,25,25,25,25,25,25,25,25
+</data>
+ </layer>
+ <layer id="2" name="roads" width="9" height="8">
+  <data encoding="csv">
+9,0,19,0,0,0,0,0,0,
+28,0,0,0,0,1610612770,0,33,0,
+0,0,0,0,0,33,0,0,0,
+0,0,0,29,0,0,17,21,0,
+0,33,0,0,0,0,0,0,0,
+0,0,34,0,0,0,0,0,0,
+0,0,0,0,33,0,0,0,0,
+0,19,0,0,0,0,19,0,0
+</data>
+ </layer>
+ <objectgroup id="4" name="areas">
+  <object id="2" name="vilage" type="vilage" x="896" y="384" width="128" height="128">
+   <properties>
+    <property name="attatchE" type="bool" value="false"/>
+    <property name="attatchN" type="bool" value="false"/>
+    <property name="attatchS" type="bool" value="false"/>
+    <property name="attatchW" type="bool" value="true"/>
+    <property name="giveable" type="bool" value="false"/>
+    <property name="removable" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="8" name="path" type="path" x="768" y="384" width="128" height="128">
+   <properties>
+    <property name="attatchE" type="bool" value="true"/>
+    <property name="attatchN" type="bool" value="false"/>
+    <property name="attatchS" type="bool" value="false"/>
+    <property name="attatchW" type="bool" value="false"/>
+    <property name="removable" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="3" name="forest1" type="forest1" x="256" y="0" width="128" height="128">
+   <properties>
+    <property name="attatchE" type="bool" value="false"/>
+    <property name="attatchN" type="bool" value="false"/>
+    <property name="attatchS" type="bool" value="false"/>
+    <property name="attatchW" type="bool" value="false"/>
+    <property name="giveable" type="bool" value="true"/>
+    <property name="removable" type="bool" value="false"/>
+    <property name="spawnX" type="int" value="320"/>
+    <property name="spawnY" type="int" value="25"/>
+   </properties>
+  </object>
+  <object id="4" name="forest2" type="forest2" x="768" y="896" width="128" height="128">
+   <properties>
+    <property name="attatchE" type="bool" value="false"/>
+    <property name="attatchN" type="bool" value="false"/>
+    <property name="attatchS" type="bool" value="false"/>
+    <property name="attatchW" type="bool" value="false"/>
+    <property name="giveable" type="bool" value="true"/>
+    <property name="removable" type="bool" value="false"/>
+    <property name="spawnX" type="int" value="832"/>
+    <property name="spawnY" type="int" value="999"/>
+   </properties>
+  </object>
+  <object id="5" name="rocks" type="rocks" x="128" y="896" width="128" height="128">
+   <properties>
+    <property name="attatchE" type="bool" value="false"/>
+    <property name="attatchN" type="bool" value="false"/>
+    <property name="attatchS" type="bool" value="false"/>
+    <property name="attatchW" type="bool" value="false"/>
+    <property name="giveable" type="bool" value="true"/>
+    <property name="removable" type="bool" value="false"/>
+    <property name="spawnX" type="int" value="192"/>
+    <property name="spawnY" type="int" value="999"/>
+   </properties>
+  </object>
+  <object id="6" name="road" type="road" x="0" y="0" width="128" height="128">
+   <properties>
+    <property name="attatchE" type="bool" value="false"/>
+    <property name="attatchN" type="bool" value="true"/>
+    <property name="attatchS" type="bool" value="true"/>
+    <property name="attatchW" type="bool" value="false"/>
+    <property name="giveable" type="bool" value="true"/>
+    <property name="removable" type="bool" value="false"/>
+    <property name="spawnX" type="int" value="64"/>
+    <property name="spawnY" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="7" name="road" type="road" x="0" y="128" width="128" height="128">
+   <properties>
+    <property name="attatchE" type="bool" value="false"/>
+    <property name="attatchN" type="bool" value="true"/>
+    <property name="attatchS" type="bool" value="false"/>
+    <property name="attatchW" type="bool" value="true"/>
+    <property name="giveable" type="bool" value="true"/>
+    <property name="removable" type="bool" value="false"/>
+    <property name="spawnX" type="int" value="0"/>
+    <property name="spawnY" type="int" value="192"/>
+   </properties>
+  </object>
+  <object id="12" name="block" type="block" x="384" y="384" width="128" height="128">
+   <properties>
+    <property name="removable" type="bool" value="false"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

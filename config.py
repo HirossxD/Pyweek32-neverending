@@ -1,4 +1,4 @@
-TITLE = 'Trash Runner'
+TITLE = 'Village defence'
 
 WIDTH = 1152
 HEIGHT = 768
