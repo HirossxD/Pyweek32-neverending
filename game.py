@@ -39,6 +39,8 @@ class Dave(Actor):
         self.y = HEIGHT / 2 + 40
 
 
+
+
     def update(self):
 
         if self.framecounter >= 100:
@@ -52,6 +54,8 @@ class Dave(Actor):
         if self.bottom >= HEIGHT:
                 self.bottom = HEIGHT
                     #self.bottom = HEIGHT
+
+
         if not keyboard.up and not keyboard.down and not keyboard.left and not keyboard.right:
             self.idle_animate()
 
@@ -158,7 +162,7 @@ class Bug(Actor):
         if self.colliderect(dave):
             self.x = -500
 class Gamestate(StateMachine):
-
+    mouse_holded = False
     init = State('init', initial= True)
     menu = State('Menu')
     game = State('Game')
@@ -167,7 +171,7 @@ class Gamestate(StateMachine):
     play = menu.to(game)
     def on_play(self):
         print('starting game')
-        tents_y = 0
+        pygame.mouse.set_cursor(pygame.cursors.broken_x)
     def on_start(self):
         print('initmenu')
 
@@ -208,6 +212,33 @@ class Gamestate(StateMachine):
                 elif selectbars[0].y == optionbars[-1].y:
                     exit()
         if self.is_game:
+            mousestate = pygame.mouse.get_pressed(3)
+            mousepos = pygame.mouse.get_pos(2)
+            getcursor = pygame.mouse.get_cursor()
+            global mouse_holded
+            if mousestate[0]:
+                if not mouse_holded:
+                    if 0 < mousepos[0] < 27:
+                        if 0 < mousepos[1] < 27:
+                            if len(tents) < 3:
+                                for tent in tents:
+                                    tent.x -= 30 * len(tents)
+                                tents.append(Tent())
+                                tents[-1].x += 30 * len(tents)
+                            else:
+                                pass
+
+                        mouse_holded = True
+            else:
+                mouse_holded = False
+                if 0 < mousepos[0] < 27:
+                    if 0 < mousepos[1] < 27:
+                        if len(tents) + 1 > 3:
+                            icons[0].image = 'cant_icon'
+                    else:
+                        icons[0].image = 'plus'
+            print(f'{mousestate[0]} mousepos: {mousepos} cursor{getcursor}')
+
             framecounter += 1
             if framecounter > 1000:
                 framecounter = 0
