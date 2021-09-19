@@ -6,11 +6,39 @@ from config import TITLE, WIDTH, HEIGHT
 from statemachine import StateMachine, State
 from pgzero.actor import Actor
 from pgzero.keyboard import keyboard
-
-
+from pathlib import Path
+from random import randint, choice
+import pygame
+import sys
+pg = sys.modules['__main__']
+background = None
+tents = []
+enemies = []
 optionbars = []
 selectbars = []
 keypressed = False
+class Tent(Actor):
+    def __init__(self):
+        super().__init__('tent')
+        self.x = WIDTH / 2
+        self.y = HEIGHT / 2
+class Bug(Actor):
+    def __init__(self):
+        super().__init__('bug')
+        self.x = randint(10, WIDTH - 10)
+        self.y = randint(10, HEIGHT - 10)
+    def update(self):
+        if self.x < WIDTH / 2:
+            self.x += 0.5
+        elif self.x > WIDTH / 2:
+            self.x -= 0.5
+        if self.y < HEIGHT / 2:
+            self.y += 0.5
+        if self.y > HEIGHT / 2:
+            self.y -= 0.5
+        if keyboard.space:
+            self.x = randint(10, WIDTH - 10)
+            self.y = randint(10, HEIGHT - 10)
 class Gamestate(StateMachine):
 
     init = State('init', initial= True)
@@ -59,6 +87,20 @@ class Gamestate(StateMachine):
                     print('options')
                 elif selectbars[0].y == optionbars[-1].y:
                     exit()
+        if self.is_game:
+            if keyboard.space:
+                if not keypressed:
+                    for tent in tents:
+                        tent.x -= 80
+                    tents.append(Tent())
+                    for tent in tents:
+                        tent.x += 20
+
+                    keypressed = True
+            else:
+                keypressed = False
+            for bug in enemies:
+                bug.update()
     def draw(self):
         if self.is_menu:
             screen.clear()
@@ -73,12 +115,30 @@ class Gamestate(StateMachine):
             screen.draw.text('EXIT', (WIDTH / 2 - 110 + 80, HEIGHT / 3 + 225), fontsize=30)
         if self.is_game:
             screen.clear()
-gmstate = Gamestate()
+            background.draw()
+            for bug in enemies:
+                bug.draw()
+            for tent in tents:
+                tent.draw()
 
+gmstate = Gamestate()
+enemies.append(Bug())
+tents.append(Tent())
 def update():
     gmstate.update()
+
 def draw():
     gmstate.draw()
 
 
+def init_game():
+    global background
+    level = pytmx.TiledMap('maps/map1.tmx')
+    #layer = level.get_layer_by_name('actors')
+    bglayer = level.get_layer_by_name('background')
+    image = Path(bglayer.image[0])
+    background = Actor(image.stem)
+
+
+init_game()
 pgzrun.go()

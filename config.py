@@ -1,4 +1,4 @@
 TITLE = 'Trash Runner'
 
-WIDTH = 1024
-HEIGHT = 720
+WIDTH = 1152
+HEIGHT = 768
