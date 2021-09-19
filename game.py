@@ -22,6 +22,8 @@ framecounter = 0
 trees = []
 icons = []
 workers = []
+loot = []
+
 class Worker(Actor):
     def __init__(self):
         super().__init__('dave_wd_1')
@@ -46,6 +48,26 @@ class Tree(Actor):
         super().__init__('tree')
         self.x = 250
         self.y = 200
+
+class Branch(Actor):
+    def __init__(self):
+        super().__init__('branch')
+        self.active = False
+        self.maxangle = randint (310, 400)
+    def fall(self):
+        if self.angle < self.maxangle:
+            self.angle += 5
+            self.y += 1
+    def update(self):
+        if not self.active:
+            self.pos = trees[0].pos
+            print('branch')
+            self.active = True
+        else:
+            self.fall()
+        if self.colliderect(dave):
+            dave.wood += 1
+            loot.remove(self)
 
 class Dave(Actor):
     def __init__(self):
@@ -79,27 +101,27 @@ class Dave(Actor):
                     #self.bottom = HEIGHT
 
 
-        if not keyboard.up and not keyboard.down and not keyboard.left and not keyboard.right:
+        if not keyboard.w and not keyboard.s and not keyboard.a and not keyboard.d:
             self.idle_animate()
 
 
-        if keyboard.down:
+        if keyboard.s:
             if not self.pressedkey:
                 self.frame = 1
                 self.pressedkey = True
             else:
-                if not keyboard.left and not keyboard.right:
+                if not keyboard.a and not keyboard.d:
                     self.move_down_animate()
                 self.y += self.speed
-        if keyboard.up:
+        if keyboard.w:
             if not self.pressedkey:
                 self.frame = 1
                 self.pressedkey = True
             else:
-                if not keyboard.left and not keyboard.right:
+                if not keyboard.a and not keyboard.d:
                     self.move_up_animate()
                 self.y -= self.speed
-        if keyboard.right:
+        if keyboard.d:
             if not self.pressedkey:
                 self.frame = 1
                 self.pressedkey = True
@@ -107,7 +129,7 @@ class Dave(Actor):
                 self.move_horizontally_animate()
                 self.x += self.speed
                 self.goingleft = False
-        if keyboard.left:
+        if keyboard.a:
             if not self.pressedkey:
                 self.frame = 1
 
@@ -160,29 +182,46 @@ class Tent(Actor):
 class Bug(Actor):
     def __init__(self):
         super().__init__('bug1')
-        self.x = randint(10, WIDTH - 10)
-        self.y = randint(10, HEIGHT - 10)
+        self.x = choice([-30, WIDTH + 30, WIDTH / 2])
+        self.y = choice([-30, HEIGHT + 30, HEIGHT / 2])
         self.frame = 1
+        self.dead = False
+    def die(self):
+        if not self.dead:
+            dave.xp += 1
+            self.frame = 1
+        self.dead = True
     def update(self):
         if framecounter %5 == 0:
             self.frame += 1
-        if self.frame > 4:
-            self.frame = 1
-        if self.frame < 5:
-            self.image = f'bug{self.frame}'
-        if self.x < WIDTH / 2:
-            self.x += 0.5
-        elif self.x > WIDTH / 2:
-            self.x -= 0.5
-        if self.y < HEIGHT / 2:
-            self.y += 0.5
-        if self.y > HEIGHT / 2:
-            self.y -= 0.5
+        if not self.dead:
+            if self.frame > 4:
+                self.frame = 1
+            if self.frame < 5:
+                self.image = f'bug{self.frame}'
+            if self.x < WIDTH / 2:
+                self.x += 0.5
+            elif self.x > WIDTH / 2:
+                self.x -= 0.5
+            if self.y < HEIGHT / 2:
+                self.y += 0.5
+            if self.y > HEIGHT / 2:
+                self.y -= 0.5
         if keyboard.space:
             self.x = randint(10, WIDTH - 10)
             self.y = randint(10, HEIGHT - 10)
-        if self.colliderect(dave) or self.colliderect(Worker()):
-            self.x = -500
+        if self.colliderect(dave):
+            self.die()
+        for worker in workers:
+            if self.colliderect(worker):
+                self.die()
+        if self.dead:
+            if self.frame < 6:
+                self.image = f'bug_die{self.frame}'
+            if self.frame > 15:
+                enemies.remove(self)
+
+
 class Gamestate(StateMachine):
     mouse_holded = False
     init = State('init', initial= True)
@@ -233,15 +272,15 @@ class Gamestate(StateMachine):
                     print('options')
                 elif selectbars[0].y == optionbars[-1].y:
                     exit()
-        if self.is_game:
+        if self.is_game: ########################################## game update
             mousestate = pygame.mouse.get_pressed(3)
             mousepos = pygame.mouse.get_pos(2)
             getcursor = pygame.mouse.get_cursor()
             global mouse_holded
             if mousestate[0]:
                 if not mouse_holded:
-                    if 0 < mousepos[0] < 27:
-                        if 0 < mousepos[1] < 27:
+                    if icons[0].left < mousepos[0] < icons[0].right:
+                        if icons[0].top < mousepos[1] < icons[0].bottom:
                             if len(tents) < 3:
                                 for tent in tents:
                                     tent.x -= 30 * len(tents)
@@ -265,11 +304,16 @@ class Gamestate(StateMachine):
             if len(workers) > 0:
                 for worker in workers:
                     worker.update()
-
+            if len(loot) > 0:
+                for item in loot:
+                    item.update()
 
             framecounter += 1
             if framecounter > 1000:
                 framecounter = 0
+            if framecounter %480 == 0:
+                loot.append(Branch())
+                enemies.append(Bug())
             dave.update()
             for bug in enemies:
                 bug.update()
@@ -293,7 +337,8 @@ class Gamestate(StateMachine):
             background.draw()
             for bug in enemies:
                 bug.draw()
-            tree.draw()
+            for tree in trees:
+                tree.draw()
             for tent in tents:
                 tent.draw()
             if dave.goingleft == True:
@@ -304,12 +349,14 @@ class Gamestate(StateMachine):
                 worker.draw()
             for icon in icons:
                 icon.draw()
-
+            for item in loot:
+                item.draw()
+            screen.draw.text(f'Wood: {dave.wood}', (WIDTH / 2 - 110 + 50, 20), color='black')
 gmstate = Gamestate()
 enemies.append(Bug())
 tents.append(Tent())
 dave = Dave()
-tree = Tree()
+trees.append(Tree())
 icons.append(Actor('plus'))
 def update():
     gmstate.update()
