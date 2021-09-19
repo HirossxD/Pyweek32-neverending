@@ -8,6 +8,7 @@ from pgzero.actor import Actor
 from pgzero.keyboard import keyboard
 from pathlib import Path
 from random import randint, choice
+from pygame.transform import flip
 import pygame
 import sys
 pg = sys.modules['__main__']
@@ -17,6 +18,108 @@ enemies = []
 optionbars = []
 selectbars = []
 keypressed = False
+framecounter = 0
+class Dave(Actor):
+    global background, entrace
+    def __init__(self):
+        super().__init__('dave_wd_1')
+        self.framecounter = 0
+        self.frame = 1
+        self.pressedkey = False
+        self.speed = 2
+        self.goingleft = False
+        self.rooms_horizontal = 0
+        self.rooms_vertical = 0
+        self.x = 75
+        self.ring_active = False
+        self.deadly = False
+
+    def update(self):
+
+        if self.framecounter >= 100:
+            self.framecounter = 0
+        if self.right >= WIDTH:
+                self.right = WIDTH
+        if self.left <= 0:
+                self.left = 0
+        if self.top <= 0:
+                self.top = 0
+        if self.bottom >= HEIGHT:
+                self.bottom = HEIGHT
+                    #self.bottom = HEIGHT
+        if not keyboard.up and not keyboard.down and not keyboard.left and not keyboard.right:
+            self.idle_animate()
+
+
+        if keyboard.down:
+            if not self.pressedkey:
+                self.frame = 1
+                self.pressedkey = True
+            else:
+                if not keyboard.left and not keyboard.right:
+                    self.move_down_animate()
+                self.y += self.speed
+        if keyboard.up:
+            if not self.pressedkey:
+                self.frame = 1
+                self.pressedkey = True
+            else:
+                if not keyboard.left and not keyboard.right:
+                    self.move_up_animate()
+                self.y -= self.speed
+        if keyboard.right:
+            if not self.pressedkey:
+                self.frame = 1
+                self.pressedkey = True
+            else:
+                self.move_horizontally_animate()
+                self.x += self.speed
+                self.goingleft = False
+        if keyboard.left:
+            #sounds.splat.play()
+            if not self.pressedkey:
+                self.frame = 1
+
+                self.pressedkey = True
+            else:
+                self.move_horizontally_animate()
+                self.x -= self.speed
+                self.goingleft = True
+
+    def idle_animate(self):
+        global framecounter
+        if framecounter % 10 == 0:
+            self.frame += 1
+        if self.frame > 3:
+            self.frame = 1
+        self.image = f'dave_idle_{self.frame}'
+
+
+    def move_down_animate(self):
+        self.framecounter += 1
+        if self.framecounter % 5 == 0:
+            self.frame += 1
+        if self.frame > 5:
+            self.frame = 1
+        self.image = f'dave_wd_{self.frame}'
+
+    def move_up_animate(self):
+        self.framecounter += 1
+        if self.framecounter % 5 == 0:
+            self.frame += 1
+        if self.frame > 5:
+            self.frame = 1
+        self.image = f'dave_wu_{self.frame}'
+        if self.framecounter >= 100:
+            self.framecounter = 0
+
+    def move_horizontally_animate(self):
+        self.framecounter += 1
+        if self.framecounter % 5 == 0:
+            self.frame += 1
+        if self.frame > 6:
+            self.frame = 1
+        self.image = f'dave_ws_{self.frame}'
 class Tent(Actor):
     def __init__(self):
         super().__init__('tent')
@@ -61,6 +164,7 @@ class Gamestate(StateMachine):
 
     def update(self):
         global keypressed
+        global framecounter
         if self.is_init:
             self.start()
         if self.is_menu:
@@ -90,7 +194,10 @@ class Gamestate(StateMachine):
                 elif selectbars[0].y == optionbars[-1].y:
                     exit()
         if self.is_game:
-
+            framecounter += 1
+            if framecounter > 1000:
+                framecounter = 0
+            dave.update()
             for bug in enemies:
                 bug.update()
     def draw(self):
@@ -112,10 +219,15 @@ class Gamestate(StateMachine):
                 bug.draw()
             for tent in tents:
                 tent.draw()
+            if dave.goingleft == True:
+                screen.blit(flip(dave._surf, True, False), dave.topleft)
+            else:
+                dave.draw()
 
 gmstate = Gamestate()
 enemies.append(Bug())
 tents.append(Tent())
+dave = Dave()
 def update():
     gmstate.update()
 
