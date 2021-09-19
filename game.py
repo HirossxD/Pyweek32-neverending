@@ -19,8 +19,15 @@ optionbars = []
 selectbars = []
 keypressed = False
 framecounter = 0
+trees = []
+icons = []
+class Tree(Actor):
+    def __init__(self):
+        super().__init__('tree')
+        self.x = randint(10, WIDTH - 10)
+        self.y = randint(10, HEIGHT - 10)
+
 class Dave(Actor):
-    global background, entrace
     def __init__(self):
         super().__init__('dave_wd_1')
         self.framecounter = 0
@@ -28,11 +35,9 @@ class Dave(Actor):
         self.pressedkey = False
         self.speed = 2
         self.goingleft = False
-        self.rooms_horizontal = 0
-        self.rooms_vertical = 0
-        self.x = 75
-        self.ring_active = False
-        self.deadly = False
+        self.x = WIDTH / 2
+        self.y = HEIGHT / 2 + 40
+
 
     def update(self):
 
@@ -128,10 +133,17 @@ class Tent(Actor):
 
 class Bug(Actor):
     def __init__(self):
-        super().__init__('bug')
+        super().__init__('bug1')
         self.x = randint(10, WIDTH - 10)
         self.y = randint(10, HEIGHT - 10)
+        self.frame = 1
     def update(self):
+        if framecounter %5 == 0:
+            self.frame += 1
+        if self.frame > 4:
+            self.frame = 1
+        if self.frame < 5:
+            self.image = f'bug{self.frame}'
         if self.x < WIDTH / 2:
             self.x += 0.5
         elif self.x > WIDTH / 2:
@@ -143,6 +155,8 @@ class Bug(Actor):
         if keyboard.space:
             self.x = randint(10, WIDTH - 10)
             self.y = randint(10, HEIGHT - 10)
+        if self.colliderect(dave):
+            self.x = -500
 class Gamestate(StateMachine):
 
     init = State('init', initial= True)
@@ -200,6 +214,15 @@ class Gamestate(StateMachine):
             dave.update()
             for bug in enemies:
                 bug.update()
+            def on_mouse_down(pos):
+                #if mouse.colliderect(icons[0]):
+                for tent in tents:
+                    tent.x -= 80
+                tents.append(Tent())
+
+            def on_mouse_down(button):
+                print("Mouse button", button, "clicked")
+
     def draw(self):
         if self.is_menu:
             screen.clear()
@@ -217,17 +240,22 @@ class Gamestate(StateMachine):
             background.draw()
             for bug in enemies:
                 bug.draw()
+            tree.draw()
             for tent in tents:
                 tent.draw()
             if dave.goingleft == True:
                 screen.blit(flip(dave._surf, True, False), dave.topleft)
             else:
                 dave.draw()
+            for icon in icons:
+                icon.draw()
 
 gmstate = Gamestate()
 enemies.append(Bug())
 tents.append(Tent())
 dave = Dave()
+tree = Tree()
+icons.append(Actor('plus'))
 def update():
     gmstate.update()
 
