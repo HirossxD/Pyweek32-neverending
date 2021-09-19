@@ -21,11 +21,31 @@ keypressed = False
 framecounter = 0
 trees = []
 icons = []
+workers = []
+class Worker(Actor):
+    def __init__(self):
+        super().__init__('dave_wd_1')
+        self.dx = choice([-1, 1])
+        self.dy = choice([-1, 1])
+    def update(self):
+        self.x += self.dx
+        self.y += self.dy
+        if framecounter %200 == 0:
+            self.dx = randint(-1,1)
+            self.dy = randint(-1,1)
+        if self.right >= WIDTH:
+                self.right = WIDTH
+        if self.left <= 0:
+                self.left = 0
+        if self.top <= 0:
+                self.top = 0
+        if self.bottom >= HEIGHT:
+                self.bottom = HEIGHT
 class Tree(Actor):
     def __init__(self):
         super().__init__('tree')
-        self.x = randint(10, WIDTH - 10)
-        self.y = randint(10, HEIGHT - 10)
+        self.x = 250
+        self.y = 200
 
 class Dave(Actor):
     def __init__(self):
@@ -37,7 +57,10 @@ class Dave(Actor):
         self.goingleft = False
         self.x = WIDTH / 2
         self.y = HEIGHT / 2 + 40
-
+        self.wood = 0
+        self.leather = 0
+        self.xp = 0
+        self.lvl = 0
 
 
 
@@ -85,7 +108,6 @@ class Dave(Actor):
                 self.x += self.speed
                 self.goingleft = False
         if keyboard.left:
-            #sounds.splat.play()
             if not self.pressedkey:
                 self.frame = 1
 
@@ -159,7 +181,7 @@ class Bug(Actor):
         if keyboard.space:
             self.x = randint(10, WIDTH - 10)
             self.y = randint(10, HEIGHT - 10)
-        if self.colliderect(dave):
+        if self.colliderect(dave) or self.colliderect(Worker()):
             self.x = -500
 class Gamestate(StateMachine):
     mouse_holded = False
@@ -224,7 +246,9 @@ class Gamestate(StateMachine):
                                 for tent in tents:
                                     tent.x -= 30 * len(tents)
                                 tents.append(Tent())
+                                workers.append(Worker())
                                 tents[-1].x += 30 * len(tents)
+                                workers[-1].pos = tents[-1].pos
                             else:
                                 pass
 
@@ -237,7 +261,11 @@ class Gamestate(StateMachine):
                             icons[0].image = 'cant_icon'
                     else:
                         icons[0].image = 'plus'
-            print(f'{mousestate[0]} mousepos: {mousepos} cursor{getcursor}')
+
+            if len(workers) > 0:
+                for worker in workers:
+                    worker.update()
+
 
             framecounter += 1
             if framecounter > 1000:
@@ -245,14 +273,8 @@ class Gamestate(StateMachine):
             dave.update()
             for bug in enemies:
                 bug.update()
-            def on_mouse_down(pos):
-                #if mouse.colliderect(icons[0]):
-                for tent in tents:
-                    tent.x -= 80
-                tents.append(Tent())
 
-            def on_mouse_down(button):
-                print("Mouse button", button, "clicked")
+
 
     def draw(self):
         if self.is_menu:
@@ -278,6 +300,8 @@ class Gamestate(StateMachine):
                 screen.blit(flip(dave._surf, True, False), dave.topleft)
             else:
                 dave.draw()
+            for worker in workers:
+                worker.draw()
             for icon in icons:
                 icon.draw()
 
