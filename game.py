@@ -11,6 +11,7 @@ from random import randint, choice
 from pygame.transform import flip
 import pygame
 import sys
+import math
 pg = sys.modules['__main__']
 background = None
 tents = []
@@ -20,11 +21,13 @@ selectbars = []
 keypressed = False
 framecounter = 0
 trees = []
+stones = []
 icons = []
 workers = []
 loot = []
 envbuildings = []
-stones = []
+towerthrown = []
+
 
 class Worker(Actor):
     def __init__(self):
@@ -45,13 +48,26 @@ class Worker(Actor):
                 self.top = 0
         if self.bottom >= HEIGHT:
                 self.bottom = HEIGHT
+class Towerthrown(Actor):
+    def __init__(self):
+        super().__init__('rock')
+        self.active = False
+        self.set = False
+    def update(self):
+        pass
+
 class Smalltower(Actor):
     def __init__(self):
         super().__init__('tower')
-        self.hp = 20
+        self.type = 'tower'
+        self.hp = 100
         self.active = False
         self.building = True
         self.harmingentities = []
+        self.targets = []
+        self.radius = 250
+        self.towerthrown = []
+
 
         self.holding_mouse = False
     def update(self):
@@ -66,6 +82,33 @@ class Smalltower(Actor):
                     mouse_holded = True
         else:
             self.active = True
+        if self.active:
+            for foe in enemies:
+                x1, y1 = self.pos
+                x2, y2 = foe.pos
+                distance = math.hypot(x1 - x2, y1 - y2)
+                if distance < self.radius:
+                    if foe not in self.targets:
+                        self.targets.append(foe)
+                    if len(self.targets) > 0:
+                        if not foe.dead:
+                            if framecounter %50 == 0:
+                                self.towerthrown.append(Towerthrown())
+                                self.towerthrown[-1].pos = self.pos
+                            if self.towerthrown != []:
+                                if self.towerthrown[-1].x < self.targets[0].x:
+                                    self.towerthrown[-1].x += 5
+                                if self.towerthrown[-1].x > self.targets[0].x:
+                                    self.towerthrown[-1].x -= 5
+                                if self.towerthrown[-1].y < self.targets[0].y:
+                                    self.towerthrown[-1].y += 5
+                                if self.towerthrown[-1].y > self.targets[0].y:
+                                    self.towerthrown[-1].y -= 5
+                                if self.targets[0].colliderect(self.towerthrown[-1]):
+                                    self.targets[0].hp -= 1
+                                    self.towerthrown.remove(self.towerthrown[-1])
+                        if self.targets[0].dead:
+                            self.targets.remove(self.targets[0])
 
         if self.active:
             for bug in enemies:
@@ -77,6 +120,14 @@ class Smalltower(Actor):
                             harmingbug.speed = 0
                         if framecounter % 500 == 0:
                             self.hp -= 1
+            if framecounter % 500 == 0:
+                towerthrown.append(Towerthrown())
+                towerthrown[-1].pos = self.pos
+            if self.hp <= 0:
+                for harmingbug in self.harmingentities:
+                    harmingbug.speed = 0.5
+                envbuildings.remove(self)
+
 class Stone(Actor):
     def __init__(self):
         super().__init__('stone')
@@ -302,6 +353,7 @@ class Bug(Actor):
         self.x = choice([-30, WIDTH + 30, WIDTH / 2])
         self.y = choice([-30, HEIGHT + 30, HEIGHT / 2])
         self.frame = 1
+        self.hp = 1
         self.dead = False
         self.speed = 0.5
     def die(self):
@@ -326,7 +378,7 @@ class Bug(Actor):
                 self.y += self.speed
             if self.y > HEIGHT / 2:
                 self.y -= self.speed
-        if self.colliderect(dave):
+        if self.colliderect(dave) or self.hp <= 0:
             self.die()
         for worker in workers:
             if self.colliderect(worker):
@@ -418,8 +470,8 @@ class Gamestate(StateMachine):
                             if dave.wood >= 10:
                                 if dave.stone >= 10:
                                     envbuildings.append(Smalltower())
-                                dave.wood -= 10
-                                dave.stone -= 10
+                                    dave.wood -= 10
+                                    dave.stone -= 10
                         mouse_holded = True
             else:
                 mouse_holded = False
@@ -449,7 +501,8 @@ class Gamestate(StateMachine):
                 bug.update()
             for building in envbuildings:
                 building.update()
-
+            for thrown in towerthrown:
+                thrown.update()
 
 
 
@@ -488,6 +541,12 @@ class Gamestate(StateMachine):
                 item.draw()
             for building in envbuildings:
                 building.draw()
+
+            for build in envbuildings:
+                if build.type == 'tower':
+                    for thrown in build.towerthrown:
+                        thrown.draw()
+
             screen.draw.text(f'Wood: {dave.wood}', (WIDTH / 2 - 110 + 50, 20), color='black')
             screen.draw.text(f'Stone: {dave.stone}', (WIDTH / 2 - 20 + 50, 20), color='black')
 gmstate = Gamestate()
@@ -504,8 +563,10 @@ icons[-1].left = icons[1].right + 10
 def update():
     gmstate.update()
 
+
 def draw():
     gmstate.draw()
+
 
 
 def init_game():
