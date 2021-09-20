@@ -23,6 +23,7 @@ trees = []
 icons = []
 workers = []
 loot = []
+envbuildings = []
 
 class Worker(Actor):
     def __init__(self):
@@ -33,8 +34,8 @@ class Worker(Actor):
         self.x += self.dx
         self.y += self.dy
         if framecounter %200 == 0:
-            self.dx = randint(-1,1)
-            self.dy = randint(-1,1)
+            self.dx = randint(-1, 1)
+            self.dy = randint(-1, 1)
         if self.right >= WIDTH:
                 self.right = WIDTH
         if self.left <= 0:
@@ -69,6 +70,61 @@ class Branch(Actor):
             dave.wood += 1
             loot.remove(self)
 
+class Barricade(Actor):
+    def __init__(self):
+        super().__init__('barricade')
+        self.hp = 20
+        self.active = False
+        self.building = True
+        self.harmingentities = []
+        self.rotated = False
+        self.holding_mouse = False
+    def update(self):
+        global mouse_holded
+        mousepos = pygame.mouse.get_pos(2)
+        mousestate = pygame.mouse.get_pressed(3)
+        if self.building:
+            self.pos = mousepos
+            if mousestate[0]:
+                if not mouse_holded:
+                    self.building = False
+                    mouse_holded = True
+
+            elif mousestate[2]:
+                if self.rotated:
+                    if not self.holding_mouse:
+                        self.angle -= 90
+                        self.rotated = False
+                        self.holding_mouse = True
+                else:
+                    if not self.holding_mouse:
+                        self.angle += 90
+                        self.rotated = True
+                        self.holding_mouse = True
+            else:
+                self.holding_mouse = False
+        else:
+            self.active = True
+
+        if self.active:
+            for bug in enemies:
+                if self.colliderect(bug):
+                    if self.active:
+                        if bug not in self.harmingentities:
+                            self.harmingentities.append(bug)
+                        for harmingbug in self.harmingentities:
+                            harmingbug.speed = 0
+                        if framecounter % 500 == 0:
+                            self.hp -= 1
+
+
+
+
+        if self.hp <= 0:
+            for harmingbug in self.harmingentities:
+                harmingbug.speed = 0.5
+            envbuildings.remove(self)
+
 class Dave(Actor):
     def __init__(self):
         super().__init__('dave_wd_1')
@@ -79,7 +135,7 @@ class Dave(Actor):
         self.goingleft = False
         self.x = WIDTH / 2
         self.y = HEIGHT / 2 + 40
-        self.wood = 0
+        self.wood = 0 + 40
         self.leather = 0
         self.xp = 0
         self.lvl = 0
@@ -186,12 +242,14 @@ class Bug(Actor):
         self.y = choice([-30, HEIGHT + 30, HEIGHT / 2])
         self.frame = 1
         self.dead = False
+        self.speed = 0.5
     def die(self):
         if not self.dead:
             dave.xp += 1
             self.frame = 1
         self.dead = True
     def update(self):
+
         if framecounter %5 == 0:
             self.frame += 1
         if not self.dead:
@@ -200,16 +258,13 @@ class Bug(Actor):
             if self.frame < 5:
                 self.image = f'bug{self.frame}'
             if self.x < WIDTH / 2:
-                self.x += 0.5
+                self.x += self.speed
             elif self.x > WIDTH / 2:
-                self.x -= 0.5
+                self.x -= self.speed
             if self.y < HEIGHT / 2:
-                self.y += 0.5
+                self.y += self.speed
             if self.y > HEIGHT / 2:
-                self.y -= 0.5
-        if keyboard.space:
-            self.x = randint(10, WIDTH - 10)
-            self.y = randint(10, HEIGHT - 10)
+                self.y -= self.speed
         if self.colliderect(dave):
             self.die()
         for worker in workers:
@@ -288,9 +343,14 @@ class Gamestate(StateMachine):
                                 workers.append(Worker())
                                 tents[-1].x += 30 * len(tents)
                                 workers[-1].pos = tents[-1].pos
-                            else:
-                                pass
+                                mouse_holded = True
 
+                                pass
+                    if icons[1].left < mousepos[0] < icons[1].right:
+                        if icons[1].top < mousepos[1] < icons[1].bottom:
+                            if dave.wood >= 8:
+                                envbuildings.append(Barricade())
+                                dave.wood -= 8
                         mouse_holded = True
             else:
                 mouse_holded = False
@@ -317,6 +377,9 @@ class Gamestate(StateMachine):
             dave.update()
             for bug in enemies:
                 bug.update()
+            for building in envbuildings:
+                building.update()
+
 
 
 
@@ -351,6 +414,8 @@ class Gamestate(StateMachine):
                 icon.draw()
             for item in loot:
                 item.draw()
+            for building in envbuildings:
+                building.draw()
             screen.draw.text(f'Wood: {dave.wood}', (WIDTH / 2 - 110 + 50, 20), color='black')
 gmstate = Gamestate()
 enemies.append(Bug())
@@ -358,6 +423,8 @@ tents.append(Tent())
 dave = Dave()
 trees.append(Tree())
 icons.append(Actor('plus'))
+icons.append(Actor('barricade_icon'))
+icons[-1].x += icons[0].width
 def update():
     gmstate.update()
 
