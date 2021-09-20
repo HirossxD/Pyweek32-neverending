@@ -52,7 +52,7 @@ class Tree(Actor):
 
 class Branch(Actor):
     def __init__(self):
-        super().__init__('branch')
+        super().__init__(choice(['branch_1', 'branch_2']))
         self.active = False
         self.maxangle = randint (310, 400)
     def fall(self):
