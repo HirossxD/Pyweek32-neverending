@@ -24,6 +24,7 @@ icons = []
 workers = []
 loot = []
 envbuildings = []
+stones = []
 
 class Worker(Actor):
     def __init__(self):
@@ -44,6 +45,65 @@ class Worker(Actor):
                 self.top = 0
         if self.bottom >= HEIGHT:
                 self.bottom = HEIGHT
+class Smalltower(Actor):
+    def __init__(self):
+        super().__init__('tower')
+        self.hp = 20
+        self.active = False
+        self.building = True
+        self.harmingentities = []
+
+        self.holding_mouse = False
+    def update(self):
+        global mouse_holded
+        mousepos = pygame.mouse.get_pos(2)
+        mousestate = pygame.mouse.get_pressed(3)
+        if self.building:
+            self.pos = mousepos
+            if mousestate[0]:
+                if not mouse_holded:
+                    self.building = False
+                    mouse_holded = True
+        else:
+            self.active = True
+
+        if self.active:
+            for bug in enemies:
+                if self.colliderect(bug):
+                    if self.active:
+                        if bug not in self.harmingentities:
+                            self.harmingentities.append(bug)
+                        for harmingbug in self.harmingentities:
+                            harmingbug.speed = 0
+                        if framecounter % 500 == 0:
+                            self.hp -= 1
+class Stone(Actor):
+    def __init__(self):
+        super().__init__('stone')
+        self.x = WIDTH - 250
+        self.y = HEIGHT - 200
+class Rock(Actor):
+    def __init__(self):
+        super().__init__('rock')
+        self.active = False
+        self.maxangle = randint(310, 400)
+
+    def fall(self):
+        if self.angle < self.maxangle:
+            self.angle += 5
+            self.y += 1
+
+    def update(self):
+        if not self.active:
+            self.pos = stones[0].pos
+            print('rock')
+            self.active = True
+        else:
+            self.fall()
+        if self.active:
+            if self.colliderect(dave):
+                dave.stone += 1
+                loot.remove(self)
 class Tree(Actor):
     def __init__(self):
         super().__init__('tree')
@@ -135,8 +195,9 @@ class Dave(Actor):
         self.goingleft = False
         self.x = WIDTH / 2
         self.y = HEIGHT / 2 + 40
-        self.wood = 0 + 40
-        self.leather = 0
+        self.wood = 0 + 50
+        self.leather = 0 + 20
+        self.stone = 0 + 30
         self.xp = 0
         self.lvl = 0
 
@@ -351,6 +412,14 @@ class Gamestate(StateMachine):
                             if dave.wood >= 8:
                                 envbuildings.append(Barricade())
                                 dave.wood -= 8
+                                mouse_holded = True
+                    elif icons[2].left < mousepos[0] < icons[2].right:
+                        if icons[2].top < mousepos[1] < icons[2].bottom:
+                            if dave.wood >= 10:
+                                if dave.stone >= 10:
+                                    envbuildings.append(Smalltower())
+                                dave.wood -= 10
+                                dave.stone -= 10
                         mouse_holded = True
             else:
                 mouse_holded = False
@@ -371,9 +440,10 @@ class Gamestate(StateMachine):
             framecounter += 1
             if framecounter > 1000:
                 framecounter = 0
-            if framecounter %480 == 0:
+            if framecounter %490 == 0:
                 loot.append(Branch())
                 enemies.append(Bug())
+                loot.append(Rock())
             dave.update()
             for bug in enemies:
                 bug.update()
@@ -402,6 +472,8 @@ class Gamestate(StateMachine):
                 bug.draw()
             for tree in trees:
                 tree.draw()
+            for stone in stones:
+                stone.draw()
             for tent in tents:
                 tent.draw()
             if dave.goingleft == True:
@@ -417,14 +489,18 @@ class Gamestate(StateMachine):
             for building in envbuildings:
                 building.draw()
             screen.draw.text(f'Wood: {dave.wood}', (WIDTH / 2 - 110 + 50, 20), color='black')
+            screen.draw.text(f'Stone: {dave.stone}', (WIDTH / 2 - 20 + 50, 20), color='black')
 gmstate = Gamestate()
 enemies.append(Bug())
 tents.append(Tent())
 dave = Dave()
 trees.append(Tree())
+stones.append(Stone())
 icons.append(Actor('plus'))
 icons.append(Actor('barricade_icon'))
-icons[-1].x += icons[0].width
+icons[-1].left = icons[0].right + 10
+icons.append(Actor('plus'))
+icons[-1].left = icons[1].right + 10
 def update():
     gmstate.update()
 
