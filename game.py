@@ -71,7 +71,8 @@ class Smalltower(Actor):
     def __init__(self):
         super().__init__('tower')
         self.type = 'tower'
-        self.hp = 100
+        self.maxhp = 10
+        self.hp = self.maxhp
         self.active = False
         self.building = True
         self.harmingentities = []
@@ -207,7 +208,8 @@ class Branch(Actor):
 class Barricade(Actor):
     def __init__(self):
         super().__init__('barricade')
-        self.hp = 20
+        self.maxhp = 20
+        self.hp = self.maxhp
         self.active = False
         self.building = True
         self.harmingentities = []
@@ -648,6 +650,14 @@ class Gamestate(StateMachine):
                         thrown.draw()
                 if not build.canplace:
                     actor_x.draw()
+                if build.active:
+                    if 0 < build.hp < build.maxhp:
+                        if build.maxhp > 50:
+                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.maxhp / 2, 5)), (200, 0, 0))
+                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.hp / 2, 5)), (0, 200, 0))
+                        else:
+                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.maxhp, 5)), (200, 0, 0))
+                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.hp, 5)), (0, 200, 0))
 
             screen.draw.text(f'Wood: {dave.wood}', (WIDTH / 2 - 110 + 50, 20), color='black')
             screen.draw.text(f'Stone: {dave.stone}', (WIDTH / 2 - 20 + 50, 20), color='black')
