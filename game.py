@@ -28,7 +28,18 @@ loot = []
 envbuildings = []
 towerthrown = []
 
+class Icon(Actor):
+    def __init__(self):
+        if len(icons) < 1:
+            super().__init__('plus')
+        if len(icons) == 1:
+            super().__init__('barricade_icon')
+        if len(icons) == 2:
+            super().__init__('tower_icon')
+        if len(icons) == 3:
+            super().__init__('plus')
 
+        self.active = True
 class Worker(Actor):
     def __init__(self):
         super().__init__('dave_wd_1')
@@ -50,7 +61,7 @@ class Worker(Actor):
                 self.bottom = HEIGHT
 class Towerthrown(Actor):
     def __init__(self):
-        super().__init__('rock')
+        super().__init__('rockammo')
         self.active = False
         self.set = False
     def update(self):
@@ -113,7 +124,7 @@ class Smalltower(Actor):
                             self.targets.remove(self.targets[0])
                             for thrown in self.towerthrown:
                                 self.towerthrown.remove(thrown)
-
+                        break
         if self.active:
             for bug in enemies:
                 if self.colliderect(bug):
@@ -159,6 +170,10 @@ class Rock(Actor):
             if self.colliderect(dave):
                 dave.stone += 1
                 loot.remove(self)
+            for worker in workers:
+                if self.colliderect(worker):
+                    dave.stone += 1
+                    loot.remove(self)
 class Tree(Actor):
     def __init__(self):
         super().__init__('tree')
@@ -184,6 +199,10 @@ class Branch(Actor):
         if self.colliderect(dave):
             dave.wood += 1
             loot.remove(self)
+        for worker in workers:
+            if self.colliderect(worker):
+                dave.wood += 1
+                loot.remove(self)
 
 class Barricade(Actor):
     def __init__(self):
@@ -358,8 +377,12 @@ class Tent(Actor):
 class Bug(Actor):
     def __init__(self):
         super().__init__('bug1')
-        self.x = choice([-30, WIDTH + 30, WIDTH / 2])
         self.y = choice([-30, HEIGHT + 30, HEIGHT / 2])
+        if self.y == HEIGHT / 2:
+            self.x = choice([-30, WIDTH + 30])
+        else:
+            self.x = choice([-30, WIDTH + 30, WIDTH / 2])
+
         self.frame = 1
         self.hp = 1
         self.dead = False
@@ -391,6 +414,39 @@ class Bug(Actor):
         for worker in workers:
             if self.colliderect(worker):
                 self.die()
+        if self.dead:
+            if self.frame < 6:
+                self.image = f'bug_die{self.frame}'
+            if self.frame > 15:
+                enemies.remove(self)
+
+class Wolf(Bug):
+    def __init__(self):
+        super().__init__()
+        self.image = 'wolf_wd_1'
+        self.hp = 5
+    def update(self):
+
+        if framecounter %5 == 0:
+            self.frame += 1
+        if not self.dead:
+            if self.frame > 5:
+                self.frame = 1
+            if self.frame < 6:
+                self.image = f'wolf_wd_{self.frame}'
+            if self.x < WIDTH / 2:
+                self.x += self.speed
+            elif self.x > WIDTH / 2:
+                self.x -= self.speed
+            if self.y < HEIGHT / 2:
+                self.y += self.speed
+            if self.y > HEIGHT / 2:
+                self.y -= self.speed
+        if self.hp <= 0:
+            self.die()
+        for worker in workers:
+            if self.colliderect(worker):
+                pass
         if self.dead:
             if self.frame < 6:
                 self.image = f'bug_die{self.frame}'
@@ -470,17 +526,30 @@ class Gamestate(StateMachine):
                     if icons[1].left < mousepos[0] < icons[1].right:
                         if icons[1].top < mousepos[1] < icons[1].bottom:
                             if dave.wood >= 8:
-                                envbuildings.append(Barricade())
-                                dave.wood -= 8
-                                mouse_holded = True
+                                if len(envbuildings) != 0:
+                                    if not envbuildings[-1].building:
+                                        envbuildings.append(Barricade())
+                                        dave.wood -= 8
+                                        mouse_holded = True
+                                else:
+                                    envbuildings.append(Barricade())
+                                    dave.wood -= 8
+                                    mouse_holded = True
                     elif icons[2].left < mousepos[0] < icons[2].right:
                         if icons[2].top < mousepos[1] < icons[2].bottom:
                             if dave.wood >= 10:
                                 if dave.stone >= 10:
-                                    envbuildings.append(Smalltower())
-                                    dave.wood -= 10
-                                    dave.stone -= 10
-                        mouse_holded = True
+                                    if len(envbuildings) != 0:
+                                        if not envbuildings[-1].building:
+                                            envbuildings.append(Smalltower())
+                                            dave.wood -= 10
+                                            dave.stone -= 10
+                                            mouse_holded = True
+                                    else:
+                                        envbuildings.append(Smalltower())
+                                        dave.wood -= 10
+                                        dave.stone -= 10
+                                        mouse_holded = True
             else:
                 mouse_holded = False
                 if 0 < mousepos[0] < 27:
@@ -489,7 +558,14 @@ class Gamestate(StateMachine):
                             icons[0].image = 'cant_icon'
                     else:
                         icons[0].image = 'plus'
-
+                if dave.wood >= 8:
+                    icons[1].active = True
+                else:
+                    icons[1].active = False
+                if dave.wood >= 10 and dave.stone >=10:
+                    icons[2].active = True
+                else:
+                    icons[2].active = False
             if len(workers) > 0:
                 for worker in workers:
                     worker.update()
@@ -500,13 +576,16 @@ class Gamestate(StateMachine):
             framecounter += 1
             if framecounter > 1000:
                 framecounter = 0
-
+            if framecounter % 119 == 0:
+                enemies.append(Wolf())
             if framecounter %490 == 0:
                 enemies.append(Bug())
+
                 if len(loot) < 3:
                     loot.append(Branch())
                     loot.append(Rock())
             dave.update()
+
             for bug in enemies:
                 bug.update()
             for building in envbuildings:
@@ -515,10 +594,10 @@ class Gamestate(StateMachine):
                     x2, y2 = dave.pos
                     distance = math.hypot(x1 - x2, y1 - y2)
                     if distance < dave.buildingradius:
-                        print(distance)
                         building.canplace = True
                     else:
                         building.canplace = False
+                        actor_x.pos = building.pos
                 building.update()
             for thrown in towerthrown:
                 thrown.update()
@@ -555,34 +634,41 @@ class Gamestate(StateMachine):
             for worker in workers:
                 worker.draw()
             for icon in icons:
-                icon.draw()
+                if icon.active:
+                    icon.draw()
             for item in loot:
                 item.draw()
-            for building in envbuildings:
-                building.draw()
 
             for build in envbuildings:
+                build.draw()
                 if build.building:
-                    screen.draw.circle((dave.pos), dave.buildingradius, (200, 0 ,0))
+                    screen.draw.circle((dave.pos), dave.buildingradius, (0, 50 ,200))
                 if build.type == 'tower':
                     for thrown in build.towerthrown:
                         thrown.draw()
+                if not build.canplace:
+                    actor_x.draw()
 
             screen.draw.text(f'Wood: {dave.wood}', (WIDTH / 2 - 110 + 50, 20), color='black')
             screen.draw.text(f'Stone: {dave.stone}', (WIDTH / 2 - 20 + 50, 20), color='black')
+            screen.draw.text(f'XP: {dave.xp}', (WIDTH / 2 + 150, 20), color='black')
+
+
 gmstate = Gamestate()
 enemies.append(Bug())
 tents.append(Tent())
 dave = Dave()
+actor_x = Actor('actor_x')
 trees.append(Tree())
 stones.append(Stone())
-icons.append(Actor('plus'))
-icons.append(Actor('barricade_icon'))
+icons.append(Icon())
+icons.append(Icon())
 icons[-1].left = icons[0].right + 10
-icons.append(Actor('plus'))
+icons.append(Icon())
 icons[-1].left = icons[1].right + 10
 def update():
     gmstate.update()
+
 
 
 def draw():
