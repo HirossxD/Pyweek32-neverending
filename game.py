@@ -67,6 +67,7 @@ class Smalltower(Actor):
         self.targets = []
         self.radius = 250
         self.towerthrown = []
+        self.canplace = False
 
 
         self.holding_mouse = False
@@ -78,7 +79,8 @@ class Smalltower(Actor):
             self.pos = mousepos
             if mousestate[0]:
                 if not mouse_holded:
-                    self.building = False
+                    if self.canplace:
+                        self.building = False
                     mouse_holded = True
         else:
             self.active = True
@@ -109,6 +111,8 @@ class Smalltower(Actor):
                                     self.towerthrown.remove(self.towerthrown[-1])
                         if self.targets[0].dead:
                             self.targets.remove(self.targets[0])
+                            for thrown in self.towerthrown:
+                                self.towerthrown.remove(thrown)
 
         if self.active:
             for bug in enemies:
@@ -190,6 +194,8 @@ class Barricade(Actor):
         self.harmingentities = []
         self.rotated = False
         self.holding_mouse = False
+        self.type = 'barricade'
+        self.canplace = False
     def update(self):
         global mouse_holded
         mousepos = pygame.mouse.get_pos(2)
@@ -198,7 +204,8 @@ class Barricade(Actor):
             self.pos = mousepos
             if mousestate[0]:
                 if not mouse_holded:
-                    self.building = False
+                    if self.canplace:
+                        self.building = False
                     mouse_holded = True
 
             elif mousestate[2]:
@@ -251,6 +258,7 @@ class Dave(Actor):
         self.stone = 0 + 30
         self.xp = 0
         self.lvl = 0
+        self.buildingradius = 150
 
 
 
@@ -492,14 +500,25 @@ class Gamestate(StateMachine):
             framecounter += 1
             if framecounter > 1000:
                 framecounter = 0
+
             if framecounter %490 == 0:
-                loot.append(Branch())
                 enemies.append(Bug())
-                loot.append(Rock())
+                if len(loot) < 3:
+                    loot.append(Branch())
+                    loot.append(Rock())
             dave.update()
             for bug in enemies:
                 bug.update()
             for building in envbuildings:
+                if building.building:
+                    x1, y1 = building.pos
+                    x2, y2 = dave.pos
+                    distance = math.hypot(x1 - x2, y1 - y2)
+                    if distance < dave.buildingradius:
+                        print(distance)
+                        building.canplace = True
+                    else:
+                        building.canplace = False
                 building.update()
             for thrown in towerthrown:
                 thrown.update()
@@ -543,6 +562,8 @@ class Gamestate(StateMachine):
                 building.draw()
 
             for build in envbuildings:
+                if build.building:
+                    screen.draw.circle((dave.pos), dave.buildingradius, (200, 0 ,0))
                 if build.type == 'tower':
                     for thrown in build.towerthrown:
                         thrown.draw()
