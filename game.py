@@ -168,14 +168,14 @@ class Grass(Actor):
         super().__init__('grass2')
         self.maxwork = 20
         self.working_status = 0
-        self.x = choice([200, WIDTH - 400])
+        self.x = randint(200, WIDTH - 400)
         self.y = choice([100, HEIGHT - 100])
     def update(self):
         if self.colliderect(dave):
             if framecounter %10 == 0:
-                self.working_status += 1
+                self.working_status += dave.workpower
             if self.working_status >= self.maxwork:
-                dave.grass += 1
+                dave.grass += randint(1, 2)
                 grasses.remove(self)
 class Stone(Actor):
     def __init__(self):
@@ -319,6 +319,7 @@ class Dave(Actor):
         self.throwed_time = pygame.time.get_ticks() / 60
         self.cooldown = 10
         self.grass = 0
+        self.workpower = 1
     def update(self):
         print(pygame.time.get_ticks() / 1000)
         #print(len(self.active_throwns))
@@ -629,7 +630,7 @@ class Gamestate(StateMachine):
             if framecounter > 1000:
                 framecounter = 0
             if pygame.time.get_ticks() / 1000 > 60:
-                if framecounter % 880 == 0:
+                if framecounter % 999 == 0:
                     enemies.append(Wolf())
             if framecounter %660 == 0:
                 enemies.append(Bug())
@@ -745,6 +746,16 @@ trees.append(Tree())
 stones.append(Stone())
 grasses.append(Grass())
 
+hotbars = []
+for i in range(0, 8):
+    thislen = len(hotbars)
+    hotbars.append(Actor('hotbar'))
+    hotbars[-1].bottom = HEIGHT - 10
+    if thislen < 2:
+        hotbars[-1].left = WIDTH / 3
+    else:
+        hotbars[-1].left = hotbars[thislen - 1].right + 5
+
 icons.append(Icon())
 icons.append(Icon())
 icons[-1].left = icons[0].right + 10
@@ -759,6 +770,8 @@ def update():
 def draw():
     gmstate.draw()
 
+    for hotbar in hotbars:
+        hotbar.draw()
 
 
 def init_game():
