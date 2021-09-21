@@ -12,7 +12,8 @@ from pygame.transform import flip
 import pygame
 import sys
 import math
-pg = sys.modules['__main__']
+
+
 background = None
 tents = []
 enemies = []
@@ -27,6 +28,22 @@ workers = []
 loot = []
 envbuildings = []
 towerthrown = []
+grasses = []
+
+class Spear(Actor):
+    def __init__(self):
+        super().__init__('rockammo')
+        self.active = True
+        self.direction = 'none'
+        self.set = False
+
+    def update(self):
+        if not self.set:
+            self.pos = dave.pos
+            if dave.image == 'dave_wu*':
+                print("dave up bro")
+            self.set = True
+
 
 class Icon(Actor):
     def __init__(self):
@@ -144,6 +161,22 @@ class Smalltower(Actor):
                     harmingbug.speed = 0.5
                 envbuildings.remove(self)
 
+
+
+class Grass(Actor):
+    def __init__(self):
+        super().__init__('grass2')
+        self.maxwork = 20
+        self.working_status = 0
+        self.x = choice([200, WIDTH - 400])
+        self.y = choice([100, HEIGHT - 100])
+    def update(self):
+        if self.colliderect(dave):
+            if framecounter %10 == 0:
+                self.working_status += 1
+            if self.working_status >= self.maxwork:
+                dave.grass += 1
+                grasses.remove(self)
 class Stone(Actor):
     def __init__(self):
         super().__init__('stone')
@@ -280,11 +313,15 @@ class Dave(Actor):
         self.xp = 0
         self.lvl = 0
         self.buildingradius = 150
-
-
-
+        self.spears = 0
+        self.active_throwns = []
+        self.canthrow = False
+        self.throwed_time = pygame.time.get_ticks() / 60
+        self.cooldown = 10
+        self.grass = 0
     def update(self):
-
+        print(pygame.time.get_ticks() / 1000)
+        #print(len(self.active_throwns))
         if self.framecounter >= 100:
             self.framecounter = 0
         if self.right >= WIDTH:
@@ -298,8 +335,9 @@ class Dave(Actor):
                     #self.bottom = HEIGHT
 
 
-        if not keyboard.w and not keyboard.s and not keyboard.a and not keyboard.d:
+        if not keyboard.w and not keyboard.s and not keyboard.a and not keyboard.d and not keyboard.space:
             self.idle_animate()
+            self.pressedkey = False
 
 
         if keyboard.s:
@@ -335,6 +373,17 @@ class Dave(Actor):
                 self.move_horizontally_animate()
                 self.x -= self.speed
                 self.goingleft = True
+
+        if keyboard.space:
+            if self.canthrow:
+                self.canthrow = False
+                self.active_throwns.append(Spear())
+            else:
+                pass
+        if not self.canthrow:
+            if self.throwed_time + self.cooldown < pygame.time.get_ticks() / 60:
+                self.throwed_time = pygame.time.get_ticks() / 60 + 2
+                self.canthrow = True
 
     def idle_animate(self):
         global framecounter
@@ -467,6 +516,7 @@ class Gamestate(StateMachine):
     def on_play(self):
         print('starting game')
         pygame.mouse.set_cursor(pygame.cursors.broken_x)
+        dave.throwed_time = pygame.time.get_ticks() / 60
     def on_start(self):
         print('initmenu')
 
@@ -578,12 +628,13 @@ class Gamestate(StateMachine):
             framecounter += 1
             if framecounter > 1000:
                 framecounter = 0
-            if framecounter % 119 == 0:
-                enemies.append(Wolf())
-            if framecounter %490 == 0:
+            if pygame.time.get_ticks() / 1000 > 60:
+                if framecounter % 880 == 0:
+                    enemies.append(Wolf())
+            if framecounter %660 == 0:
                 enemies.append(Bug())
 
-                if len(loot) < 3:
+                if len(loot) < 10:
                     loot.append(Branch())
                     loot.append(Rock())
             dave.update()
@@ -603,8 +654,13 @@ class Gamestate(StateMachine):
                 building.update()
             for thrown in towerthrown:
                 thrown.update()
-
-
+            for thrown in dave.active_throwns:
+                thrown.update()
+            for grass in grasses:
+                grass.update()
+            if len(grasses) < 2:
+                if framecounter %880 == 0:
+                    grasses.append(Grass())
 
     def draw(self):
         if self.is_menu:
@@ -658,10 +714,26 @@ class Gamestate(StateMachine):
                         else:
                             screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.maxhp, 5)), (200, 0, 0))
                             screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.hp, 5)), (0, 200, 0))
+            for thrown in dave.active_throwns:
+                thrown.draw()
+            for grass in grasses:
+                grass.draw()
+                if grass.colliderect(dave):
+                    screen.draw.filled_rect(Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.maxwork, 5)), (200, 200, 0))
+                    screen.draw.filled_rect(Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.working_status, 5)), (0, 0, 200))
 
-            screen.draw.text(f'Wood: {dave.wood}', (WIDTH / 2 - 110 + 50, 20), color='black')
-            screen.draw.text(f'Stone: {dave.stone}', (WIDTH / 2 - 20 + 50, 20), color='black')
-            screen.draw.text(f'XP: {dave.xp}', (WIDTH / 2 + 150, 20), color='black')
+            #screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
+            screen.blit('branch',(WIDTH - 100, 10))
+            screen.draw.text(f' x {dave.wood}', (WIDTH - 70 , 20), color='black')
+            screen.blit('rock', (WIDTH - 94, 50))
+            screen.draw.text(f' x {dave.stone}', (WIDTH - 70, 55), color='black')
+            screen.blit('grassfiber',(WIDTH - 98, 80))
+            screen.draw.text(f' x {dave.grass}', (WIDTH - 70, 88), color='black')
+            screen.blit('leather',(WIDTH - 100, 110))
+            screen.draw.text(f' x {dave.leather}', (WIDTH - 70, 118), color='black')
+
+
+            screen.draw.text(f'XP: {dave.xp}', (WIDTH / 2, 10), color='black')
 
 
 gmstate = Gamestate()
@@ -671,11 +743,14 @@ dave = Dave()
 actor_x = Actor('actor_x')
 trees.append(Tree())
 stones.append(Stone())
+grasses.append(Grass())
+
 icons.append(Icon())
 icons.append(Icon())
 icons[-1].left = icons[0].right + 10
 icons.append(Icon())
 icons[-1].left = icons[1].right + 10
+
 def update():
     gmstate.update()
 
