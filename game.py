@@ -10,6 +10,7 @@ from pathlib import Path
 from random import randint, choice
 from pygame.transform import flip
 import pygame
+from pygame.locals import *
 import sys
 import math
 
@@ -171,12 +172,20 @@ class Grass(Actor):
         self.x = randint(200, WIDTH - 400)
         self.y = choice([100, HEIGHT - 100])
     def update(self):
+
         if self.colliderect(dave):
             if framecounter %10 == 0:
                 self.working_status += dave.workpower
             if self.working_status >= self.maxwork:
                 dave.grass += randint(1, 2)
                 grasses.remove(self)
+        for worker in workers:
+            if self.colliderect(worker):
+                if framecounter %10 == 0:
+                    self.working_status += dave.workpower
+                if self.working_status >= self.maxwork:
+                    dave.grass += randint(1, 2)
+                    grasses.remove(self)
 class Stone(Actor):
     def __init__(self):
         super().__init__('stone')
@@ -300,6 +309,7 @@ class Barricade(Actor):
 class Dave(Actor):
     def __init__(self):
         super().__init__('dave_wd_1')
+        self.hotbar = 0
         self.framecounter = 0
         self.frame = 1
         self.pressedkey = False
@@ -310,7 +320,7 @@ class Dave(Actor):
         self.wood = 0 + 50
         self.leather = 0 + 20
         self.stone = 0 + 30
-        self.xp = 0
+        self.xp = 20
         self.lvl = 0
         self.buildingradius = 150
         self.spears = 0
@@ -321,7 +331,7 @@ class Dave(Actor):
         self.grass = 0
         self.workpower = 1
     def update(self):
-        print(pygame.time.get_ticks() / 1000)
+        #print(pygame.time.get_ticks() / 1000)
         #print(len(self.active_throwns))
         if self.framecounter >= 100:
             self.framecounter = 0
@@ -334,6 +344,9 @@ class Dave(Actor):
         if self.bottom >= HEIGHT:
                 self.bottom = HEIGHT
                     #self.bottom = HEIGHT
+        # for event in pygame.event.get():
+        #     if event.type == pygame.MOUSEWHEEL:
+        #         print(event.x,event.y)
 
 
         if not keyboard.w and not keyboard.s and not keyboard.a and not keyboard.d and not keyboard.space:
@@ -386,6 +399,16 @@ class Dave(Actor):
                 self.throwed_time = pygame.time.get_ticks() / 60 + 2
                 self.canthrow = True
 
+        if dave.xp == 25:
+            workers.append(Worker())
+            workers[-1].pos = tents[-1].pos
+            dave.xp += 1
+
+        if dave.xp == 75:
+            workers.append(Worker())
+            workers[-1].pos = tents[-1].pos
+            dave.xp += 1
+
     def idle_animate(self):
         global framecounter
         if framecounter % 10 == 0:
@@ -420,6 +443,8 @@ class Dave(Actor):
         if self.frame > 6:
             self.frame = 1
         self.image = f'dave_ws_{self.frame}'
+
+
 class Tent(Actor):
     def __init__(self):
         super().__init__('tent')
@@ -503,6 +528,7 @@ class Wolf(Bug):
             if self.frame < 6:
                 self.image = f'bug_die{self.frame}'
             if self.frame > 15:
+                dave.leather += 1
                 enemies.remove(self)
 
 
@@ -526,7 +552,9 @@ class Gamestate(StateMachine):
         for i in range(0, 4):
             optionbars.append(Rect((WIDTH / 2 - 100, HEIGHT / 3 + (70 * i)), (200, 50)))
 
+
     def update(self):
+
         global keypressed
         global framecounter
         if self.is_init:
@@ -560,22 +588,32 @@ class Gamestate(StateMachine):
         if self.is_game: ########################################## game update
             mousestate = pygame.mouse.get_pressed(3)
             mousepos = pygame.mouse.get_pos(2)
-            getcursor = pygame.mouse.get_cursor()
             global mouse_holded
             if mousestate[0]:
                 if not mouse_holded:
                     if icons[0].left < mousepos[0] < icons[0].right:
                         if icons[0].top < mousepos[1] < icons[0].bottom:
-                            if len(tents) < 3:
-                                for tent in tents:
-                                    tent.x -= 30 * len(tents)
-                                tents.append(Tent())
-                                workers.append(Worker())
-                                tents[-1].x += 30 * len(tents)
-                                workers[-1].pos = tents[-1].pos
-                                mouse_holded = True
+                            if icons[0].active:
+                                if dave.xp >= 50:
+                                    if len(tents) < 2:
+                                        for tent in tents:
+                                            tent.x -= 30 * len(tents)
+                                        tents.append(Tent())
+                                        workers.append(Worker())
+                                        tents[-1].x += 30 * len(tents)
+                                        workers[-1].pos = tents[-1].pos
+                                        mouse_holded = True
+                                    if dave.xp >= 100:
+                                        if len(tents) < 3:
+                                            for tent in tents:
+                                                tent.x -= 30 * len(tents)
+                                            tents.append(Tent())
+                                            workers.append(Worker())
+                                            tents[-1].x += 30 * len(tents)
+                                            workers[-1].pos = tents[-1].pos
+                                            mouse_holded = True
 
-                                pass
+
                     if icons[1].left < mousepos[0] < icons[1].right:
                         if icons[1].top < mousepos[1] < icons[1].bottom:
                             if dave.wood >= 8:
@@ -588,6 +626,7 @@ class Gamestate(StateMachine):
                                     envbuildings.append(Barricade())
                                     dave.wood -= 8
                                     mouse_holded = True
+
                     elif icons[2].left < mousepos[0] < icons[2].right:
                         if icons[2].top < mousepos[1] < icons[2].bottom:
                             if dave.wood >= 10:
@@ -605,63 +644,75 @@ class Gamestate(StateMachine):
                                         mouse_holded = True
             else:
                 mouse_holded = False
-                if 0 < mousepos[0] < 27:
-                    if 0 < mousepos[1] < 27:
-                        if len(tents) + 1 > 3:
-                            icons[0].image = 'cant_icon'
-                    else:
-                        icons[0].image = 'plus'
-                if dave.wood >= 8:
-                    icons[1].active = True
-                else:
-                    icons[1].active = False
-                if dave.wood >= 10 and dave.stone >=10:
+
+            if len(workers) > 0:
+                if dave.xp > 50:
+                    icons[0].active = True
+            else:
+                icons[0].active = False
+
+
+            if dave.wood >= 8:
+                icons[1].active = True
+            else:
+                icons[1].active = False
+
+            towers_count = sum(1 for x in envbuildings if isinstance(x, Smalltower))
+
+            if dave.wood >= 10 and dave.stone >= 10:
+                if towers_count < len(workers) + 1:
                     icons[2].active = True
                 else:
                     icons[2].active = False
-            if len(workers) > 0:
-                for worker in workers:
-                    worker.update()
-            if len(loot) > 0:
-                for item in loot:
-                    item.update()
+            else:
+                icons[2].active = False
 
-            framecounter += 1
-            if framecounter > 1000:
-                framecounter = 0
-            if pygame.time.get_ticks() / 1000 > 60:
-                if framecounter % 999 == 0:
-                    enemies.append(Wolf())
-            if framecounter %660 == 0:
-                enemies.append(Bug())
 
-                if len(loot) < 10:
-                    loot.append(Branch())
-                    loot.append(Rock())
-            dave.update()
+            for worker in workers:
+                worker.update()
 
-            for bug in enemies:
-                bug.update()
-            for building in envbuildings:
-                if building.building:
-                    x1, y1 = building.pos
-                    x2, y2 = dave.pos
-                    distance = math.hypot(x1 - x2, y1 - y2)
-                    if distance < dave.buildingradius:
-                        building.canplace = True
-                    else:
-                        building.canplace = False
-                        actor_x.pos = building.pos
-                building.update()
-            for thrown in towerthrown:
-                thrown.update()
-            for thrown in dave.active_throwns:
-                thrown.update()
-            for grass in grasses:
-                grass.update()
-            if len(grasses) < 2:
-                if framecounter %880 == 0:
-                    grasses.append(Grass())
+            for item in loot:
+                item.update()
+
+        framecounter += 1
+        if framecounter > 1000:
+            framecounter = 0
+        if pygame.time.get_ticks() / 1000 > 60:
+            if framecounter % 999 == 0:
+                enemies.append(Wolf())
+        if framecounter %660 == 0:
+            enemies.append(Bug())
+
+            if len(loot) < 10:
+                loot.append(Branch())
+                loot.append(Rock())
+        dave.update()
+
+        for bug in enemies:
+            bug.update()
+
+
+
+        for building in envbuildings:
+            if building.building:
+                x1, y1 = building.pos
+                x2, y2 = dave.pos
+                distance = math.hypot(x1 - x2, y1 - y2)
+                if distance < dave.buildingradius:
+                    building.canplace = True
+                else:
+                    building.canplace = False
+                    actor_x.pos = building.pos
+            building.update()
+        for thrown in towerthrown:
+            thrown.update()
+        for thrown in dave.active_throwns:
+            thrown.update()
+        for grass in grasses:
+            grass.update()
+        if len(grasses) < 2:
+            if framecounter %880 == 0:
+                grasses.append(Grass())
 
     def draw(self):
         if self.is_menu:
@@ -682,6 +733,8 @@ class Gamestate(StateMachine):
                 bug.draw()
             for tree in trees:
                 tree.draw()
+            for grass in grasses:
+                grass.draw()
             for stone in stones:
                 stone.draw()
             for tent in tents:
@@ -692,6 +745,12 @@ class Gamestate(StateMachine):
                 dave.draw()
             for worker in workers:
                 worker.draw()
+                for grass in grasses:
+                    if grass.colliderect(worker):
+                        screen.draw.filled_rect(
+                            Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.maxwork, 5)),(200, 200, 0))
+                        screen.draw.filled_rect(
+                            Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.working_status, 5)),(0, 0, 200))
             for icon in icons:
                 if icon.active:
                     icon.draw()
@@ -718,10 +777,11 @@ class Gamestate(StateMachine):
             for thrown in dave.active_throwns:
                 thrown.draw()
             for grass in grasses:
-                grass.draw()
                 if grass.colliderect(dave):
                     screen.draw.filled_rect(Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.maxwork, 5)), (200, 200, 0))
                     screen.draw.filled_rect(Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.working_status, 5)), (0, 0, 200))
+            for hotbar in hotbars:
+                hotbar.draw()
 
             #screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
             screen.blit('branch',(WIDTH - 100, 10))
@@ -755,12 +815,29 @@ for i in range(0, 8):
         hotbars[-1].left = WIDTH / 3
     else:
         hotbars[-1].left = hotbars[thislen - 1].right + 5
-
+hotbars.append(Actor('active_hotbar'))
+hotbars[-1].pos = hotbars[0].pos
 icons.append(Icon())
 icons.append(Icon())
 icons[-1].left = icons[0].right + 10
 icons.append(Icon())
 icons[-1].left = icons[1].right + 10
+
+def on_mouse_down(pos, button):
+    print("Mouse button", button, "clicked at", pos)
+    if gmstate.is_game:
+        if button == mouse.WHEEL_UP:
+                    print('up')
+                    dave.hotbar += 1
+                    if dave.hotbar > 7:
+                        dave.hotbar = 7
+                    hotbars[-1].pos = hotbars[dave.hotbar].pos
+        elif button == mouse.WHEEL_DOWN:
+                    dave.hotbar -= 1
+                    if dave.hotbar < 0:
+                        dave.hotbar = 0
+                    hotbars[-1].pos = hotbars[dave.hotbar].pos
+
 
 def update():
     gmstate.update()
@@ -770,8 +847,7 @@ def update():
 def draw():
     gmstate.draw()
 
-    for hotbar in hotbars:
-        hotbar.draw()
+
 
 
 def init_game():
