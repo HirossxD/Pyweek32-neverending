@@ -128,8 +128,10 @@ class Spear(Actor):
                     self.y -= 5
                 if abs(self.x - self.throwed_direction[0]) < 8 and abs(self.y - self.throwed_direction[1]) < 8:
                     self.pos = self.throwed_direction
+
         if self.durability <=0:
-            hotbaritems.remove(self)
+            if not self.harmful:
+                hotbaritems.remove(self)
 
 
 class Icon(Actor):
@@ -196,7 +198,7 @@ class Smalltower(Actor):
         if self.building:
             self.pos = mousepos
             if mousestate[0]:
-                if not self.mouse_holded:
+                if not gmstate.mouse_holded:
                     if self.canplace:
                         self.building = False
                     mouse_holded = True
@@ -348,13 +350,12 @@ class Barricade(Actor):
         self.type = 'barricade'
         self.canplace = False
     def update(self):
-        global mouse_holded
         mousepos = pygame.mouse.get_pos(2)
         mousestate = pygame.mouse.get_pressed(3)
         if self.building:
             self.pos = mousepos
             if mousestate[0]:
-                if not mouse_holded:
+                if not gmstate.mouse_holded:
                     if self.canplace:
                         self.building = False
                     mouse_holded = True
@@ -926,6 +927,11 @@ class Gamestate(StateMachine):
                 hotbar.draw()
             for item in hotbaritems:
                 item.icon.draw()
+                if item.durability < item.maxdurability:
+                    screen.draw.filled_rect(
+                        Rect((item.icon.x - item.icon.width - 5, item.icon.y + item.icon.height / 3), (item.maxdurability, 5)),(200, 0, 0))
+                    screen.draw.filled_rect(
+                        Rect((item.icon.x - item.icon.width - 5, item.icon.y + item.icon.height / 3), (item.durability, 5)),(200, 200, 0))
 
             #screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
             screen.blit('branch',(WIDTH - 100, 10))
