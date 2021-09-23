@@ -412,7 +412,7 @@ class Dave(Actor):
         self.leather = 0 + 20
         self.stone = 0 + 50
         self.grass = 10 + 50
-        self.xp = 20
+        self.xp = 50
         self.lvl = 0
         self.buildingradius = 150
         self.spears = 0
@@ -774,8 +774,8 @@ class Gamestate(StateMachine):
             else:
                 self.mouse_holded = False
 
-            if len(workers) > 0:
-                if dave.xp > 50:
+            if len(workers) < 2:
+                if dave.xp >= 50:
                     icons[0].active = True
             else:
                 icons[0].active = False
@@ -979,13 +979,21 @@ for i in range(0, 8):
 hotbars.append(ActiveHotbar())
 hotbars[-1].pos = hotbars[0].pos
 
+#build icons
 icons.append(Icon())
-icons.append(Icon())
-icons[-1].left = icons[len(icons) - 2].right + 10
-icons.append(Icon())
-icons[-1].left = icons[len(icons) - 2].right + 10
+icons[-1].pos = (WIDTH - 2 * icons[-1].width - 10, 300)
 icons.append(Icon())
 icons[-1].left = icons[len(icons) - 2].right + 10
+icons[-1].y = icons[len(icons) - 2].y
+icons.append(Icon())
+icons[-1].top = icons[0].bottom + 10
+icons[-1].x = icons[0].x
+
+# craft icons
+
+icons.append(Icon())
+icons[-1].top = icons[0].bottom + 100
+icons[-1].x = icons[0].x
 
 
 def on_mouse_down(pos, button):
