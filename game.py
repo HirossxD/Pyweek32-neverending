@@ -126,16 +126,9 @@ class Spear(Actor):
                                 self.throwed_direction = self.pos
 
                 animate(self,tween='linear', duration=0.4, pos = self.throwed_direction)
-                if abs(self.x - self.throwed_direction[0]) < 5 and abs(self.y - self.throwed_direction[1]) < 5:
+                if abs(self.x - self.throwed_direction[0]) < 3 and abs(self.y - self.throwed_direction[1]) < 3:
                     self.throwed_direction = self.pos
-                # if self.x < self.throwed_direction[0]:
-                #     self.x += 5
-                # if self.x > self.throwed_direction[0]:
-                #     self.x -= 5
-                # if self.y < self.throwed_direction[1]:
-                #     self.y += 5
-                # if self.y > self.throwed_direction[1]:
-                #     self.y -= 5
+
 
 
 
@@ -228,14 +221,10 @@ class Smalltower(Actor):
                                 self.towerthrown.append(Towerthrown())
                                 self.towerthrown[-1].pos = self.pos
                             if self.towerthrown != []:
-                                if self.towerthrown[-1].x < self.targets[0].x:
-                                    self.towerthrown[-1].x += 5
-                                if self.towerthrown[-1].x > self.targets[0].x:
-                                    self.towerthrown[-1].x -= 5
-                                if self.towerthrown[-1].y < self.targets[0].y:
-                                    self.towerthrown[-1].y += 5
-                                if self.towerthrown[-1].y > self.targets[0].y:
-                                    self.towerthrown[-1].y -= 5
+                                animate(self.towerthrown[-1], tween='linear', duration=0.4, pos=self.targets[0].pos)
+                                if abs(self.towerthrown[-1].x - self.targets[0].x) < 3 and abs(self.towerthrown[-1].y - self.targets[0].y) < 3:
+                                    self.towerthrown[-1].pos = self.targets[0].pos
+
                                 if self.targets[0].colliderect(self.towerthrown[-1]):
                                     self.targets[0].hp -= 1
                                     self.towerthrown.remove(self.towerthrown[-1])
