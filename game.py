@@ -136,7 +136,8 @@ class Spear(Actor):
                     rel_x, rel_y = mouse_x - self.x, mouse_y - self.y
                     self.angle = (180 / math.pi) * -math.atan2(rel_y, rel_x) - 90
                     self.set = True
-
+                if self.right >= WIDTH - offset:
+                    self.throwed_direction = self.pos
                 for enemy in enemies:
                     if self.colliderect(enemy):
                         if not enemy.dead:
