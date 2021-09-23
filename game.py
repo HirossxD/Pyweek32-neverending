@@ -57,10 +57,11 @@ class Spear(Actor):
         self.maxdurability = 20
         self.durability = self.maxdurability
         self.throwed = False
-        self.icon = Actor('spear_icon')
+        self.icon = Actor('spear_hotbaricon')
         self.hotbarposition = 0
         self.harmful = False
         self.in_hand = False
+        self.icon.angle = -45
 
 
 
@@ -115,8 +116,9 @@ class Spear(Actor):
 
                 for enemy in enemies:
                     if self.colliderect(enemy):
-                        enemy.hp -= 2
-                        self.throwed_direction = self.pos
+                        if not enemy.dead:
+                            enemy.hp -= 2
+                            self.throwed_direction = self.pos
 
                 if self.x < self.throwed_direction[0]:
                     self.x += 5
@@ -143,7 +145,7 @@ class Icon(Actor):
         if len(icons) == 2:
             super().__init__('tower_icon')
         if len(icons) == 3:
-            super().__init__('plus')
+            super().__init__('spear_icon')
         if len(icons) > 3:
             super().__init__('plus')
 
@@ -503,12 +505,12 @@ class Dave(Actor):
             workers.append(Worker())
             workers[-1].pos = tents[-1].pos
             dave.xp += 1
+
         for item in hotbaritems:
             if self.colliderect(item):
                 if isinstance(item, Spear):
                     if item.throwed:
                         if not item.harmful:
-                            print(type(item))
                             for hotbar in hotbars:
                                 if isinstance(hotbar, Hotbar):
                                     if not hotbar.occupied:
@@ -793,7 +795,16 @@ class Gamestate(StateMachine):
                     icons[2].active = False
             else:
                 icons[2].active = False
-
+            if dave.wood >= 2 and dave.stone >= 1 and dave.grass >= 2:
+                for hotbar in hotbars:
+                    if isinstance(hotbar, Hotbar):
+                        if hotbar.occupied:
+                            icons[3].active = False
+                        else:
+                            icons[3].active = True
+                            break
+            else:
+                icons[3].active = False
 
             for worker in workers:
                 worker.update()
@@ -929,9 +940,9 @@ class Gamestate(StateMachine):
                 item.icon.draw()
                 if item.durability < item.maxdurability:
                     screen.draw.filled_rect(
-                        Rect((item.icon.x - item.icon.width - 5, item.icon.y + item.icon.height / 3), (item.maxdurability, 5)),(200, 0, 0))
+                        Rect((item.icon.x - item.icon.width / 4, item.icon.y + item.icon.height / 3), (item.maxdurability, 5)),(200, 0, 0))
                     screen.draw.filled_rect(
-                        Rect((item.icon.x - item.icon.width - 5, item.icon.y + item.icon.height / 3), (item.durability, 5)),(200, 200, 0))
+                        Rect((item.icon.x - item.icon.width / 4, item.icon.y + item.icon.height / 3), (item.durability, 5)),(200, 200, 0))
 
             #screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
             screen.blit('branch',(WIDTH - 100, 10))
