@@ -14,6 +14,8 @@ from pygame.locals import *
 import sys
 import math
 
+offset = 100
+
 background = None
 tents = []
 enemies = []
@@ -40,11 +42,15 @@ class Hotbar(Actor):
         super().__init__('hotbar')
         self.occupied = False
     def update(self):
-        for item in hotbaritems:
-            if item.pos == self.pos:
-                self.occupied = True
-            else:
-                self.occupied = False
+        print(int(hotbars[0].x))
+        if hotbaritems:
+            print(f'item{int(hotbaritems[0].icon.x)}')
+
+        #if int(self.x) == int(Spear().icon.x):
+        if Spear().icon.pos == self.pos:
+            self.occupied = True
+            print('MATCH')
+
 class Spear(Actor):
     def __init__(self):
         super().__init__('spear')
@@ -61,7 +67,7 @@ class Spear(Actor):
         self.harmful = False
         self.in_hand = False
         self.icon.angle = -45
-
+        self.placedinhotbar = False
     def Throw(self):
 
         for hotbar in hotbars:
@@ -73,7 +79,7 @@ class Spear(Actor):
         self.harmful = True
         self.throwed = True
         self.in_hand = False
-
+        self.placedinhotbar = False
         if self.throwed_direction == None:
             self.durability -= 5
             self.throwed_direction = pygame.mouse.get_pos()
@@ -86,8 +92,10 @@ class Spear(Actor):
                 if not hotbar.occupied:
                     if not self.throwed:
                         if not self.harmful:
-                            self.icon.pos = hotbar.pos
-                            hotbar.occupied = True
+                            if not self.placedinhotbar:
+                                self.icon.pos = hotbar.pos
+                                hotbar.occupied = True
+                                self.placedinhotbar = True
                     break
         for hotbar in hotbars:
             if isinstance(hotbar, ActiveHotbar):
@@ -167,20 +175,47 @@ class Worker(Actor):
         super().__init__('dave_wd_1')
         self.dx = choice([-1, 1])
         self.dy = choice([-1, 1])
+        self.rand = randint(50, 500)
     def update(self):
         self.x += self.dx
         self.y += self.dy
-        if framecounter %200 == 0:
+        if framecounter %self.rand == 0:
             self.dx = randint(-1, 1)
             self.dy = randint(-1, 1)
-        if self.right >= WIDTH:
-                self.right = WIDTH
+            self.rand = randint(50, 500)
+
+        if self.right >= WIDTH - offset:
+                self.dx *= -1
+                self.right = WIDTH - offset -1
+
         if self.left <= 0:
-                self.left = 0
+                self.left = 1
+                self.dx *= -1
         if self.top <= 0:
-                self.top = 0
+                self.top = 1
+                self.dy *= -1
         if self.bottom >= HEIGHT:
-                self.bottom = HEIGHT
+                self.bottom = HEIGHT -1
+                self.dy *= -1
+
+        if self.colliderect(Stone()):
+            if int(self.right) in range(int(Stone().left) - 5, int(Stone().left) + 5):
+                if not self.y > Stone().bottom:
+                    self.right = Stone().left
+            if int(self.left) in range(int(Stone().right) - 5, int(Stone().right) + 5):
+                if not self.y > Stone().bottom:
+                    self.left = Stone().right
+            if int(self.bottom) in range(int(Stone().y) - 5, int(Stone().y) + 5):
+                self.bottom = Stone().y - 5
+            if int(self.top) in range(int(Stone().y) - 5, int(Stone().y) + 5):
+                self.top = Stone().y + 5
+
+        if self.colliderect(Grass()):
+            self.dx = 0
+            self.dx = 0
+            if Grass().working_status >= 20:
+                self.dx = choice([-1, 1])
+                self.dy = choice([-1, 1])
 class Towerthrown(Actor):
     def __init__(self):
         super().__init__(choice(['rockammo', 'rock_1', 'rock_2']))
@@ -281,15 +316,19 @@ class Grass(Actor):
                 grasses.remove(self)
         for worker in workers:
             if self.colliderect(worker):
+                worker.dx = 0
+                worker.dy = 0
                 if framecounter %10 == 0:
                     self.working_status += dave.workpower
                 if self.working_status >= self.maxwork:
+                    worker.dx = choice([-1, 1])
+                    worker.dy = choice([-1, 1])
                     dave.grass += randint(1, 2)
                     grasses.remove(self)
 class Stone(Actor):
     def __init__(self):
         super().__init__('stone')
-        self.x = WIDTH - 250
+        self.x = WIDTH - 250 - offset
         self.y = HEIGHT - 200
 class Rock(Actor):
     def __init__(self):
@@ -313,14 +352,17 @@ class Rock(Actor):
             if self.colliderect(dave):
                 dave.stone += 1
                 loot.remove(self)
-            for worker in workers:
-                if self.colliderect(worker):
-                    dave.stone += 1
-                    loot.remove(self)
+            elif workers != []:
+                for worker in workers:
+                    if self.colliderect(worker):
+                        dave.stone += 1
+                        loot.remove(self)
+                        break
+
 class Tree(Actor):
     def __init__(self):
         super().__init__('tree')
-        self.x = 250
+        self.x = 250 - offset
         self.y = 200
 
 class Branch(Actor):
@@ -340,12 +382,14 @@ class Branch(Actor):
         else:
             self.fall()
         if self.colliderect(dave):
-            dave.wood += 1
+            dave.stone += 1
             loot.remove(self)
-        for worker in workers:
-            if self.colliderect(worker):
-                dave.wood += 1
-                loot.remove(self)
+        elif workers != []:
+            for worker in workers:
+                if self.colliderect(worker):
+                    dave.stone += 1
+                    loot.remove(self)
+                    break
 
 class Barricade(Actor):
     def __init__(self):
@@ -416,7 +460,7 @@ class Dave(Actor):
         self.pressedkey = False
         self.speed = 2
         self.goingleft = False
-        self.x = WIDTH / 2
+        self.x = (WIDTH - offset) / 2
         self.y = HEIGHT / 2 + 40
         self.wood = 0 + 50
         self.leather = 0 + 20
@@ -431,7 +475,8 @@ class Dave(Actor):
         self.canthrow = False
         self.throwed_time = pygame.time.get_ticks() / 60
         self.cooldown = 10
-
+        self.encumbered = False
+        self.hotbarusage = 0
         self.workpower = 1
         self.idle = False
     def update(self):
@@ -439,20 +484,33 @@ class Dave(Actor):
         #print(len(self.active_throwns))
         if self.framecounter >= 100:
             self.framecounter = 0
-        if self.right >= WIDTH:
-                self.right = WIDTH
+        if self.right >= WIDTH - offset:
+                self.right = WIDTH - offset
         if self.left <= 0:
                 self.left = 0
         if self.top <= 0:
                 self.top = 0
         if self.bottom >= HEIGHT:
                 self.bottom = HEIGHT
+
+        if self.colliderect(Stone()):
+            if int(self.right) in range(int(Stone().left) - 5, int(Stone().left) + 5):
+                if not self.y > Stone().bottom:
+                    self.right = Stone().left
+            if int(self.left) in range(int(Stone().right) - 5, int(Stone().right) + 5):
+                if not self.y > Stone().bottom:
+                    self.left = Stone().right
+            if int(self.bottom) in range(int(Stone().y) - 5, int(Stone().y) + 5):
+                self.bottom = Stone().y - 5
+            if int(self.top) in range(int(Stone().y) - 5, int(Stone().y) + 5):
+                self.top = Stone().y + 5
                     #self.bottom = HEIGHT
         # for event in pygame.event.get():
         #     if event.type == pygame.MOUSEWHEEL:
         #         print(event.x,event.y)
 
-
+        # if keyboard.l:
+        #     workers.append(Worker())
         if not keyboard.w and not keyboard.s and not keyboard.a and not keyboard.d and not keyboard.space:
             self.goingleft = False
             self.idle_animate()
@@ -531,7 +589,14 @@ class Dave(Actor):
                                         item.throwed_direction = None
                                         item.harmful = False
                                         break
-
+        self.hotbarusage = 0
+        for hotbar in hotbars:
+            if isinstance(hotbar, Hotbar):
+                if hotbar.occupied:
+                    self.hotbarusage += 1
+                    if self.hotbarusage >= 6:
+                        dave.encumbered = True
+                        print('encumbered')
     def idle_animate(self):
         global framecounter
         if framecounter % 10 == 0:
@@ -571,7 +636,7 @@ class Dave(Actor):
 class Tent(Actor):
     def __init__(self):
         super().__init__('tent')
-        self.x = WIDTH / 2
+        self.x = (WIDTH - offset) / 2
         self.y = HEIGHT / 2
 
 class Bug(Actor):
@@ -581,7 +646,7 @@ class Bug(Actor):
         if self.y == HEIGHT / 2:
             self.x = choice([-30, WIDTH + 30])
         else:
-            self.x = choice([-30, WIDTH + 30, WIDTH / 2])
+            self.x = choice([-30, WIDTH + 30, (WIDTH - offset) / 2])
 
         self.frame = 1
         self.hp = 1
@@ -601,9 +666,9 @@ class Bug(Actor):
                 self.frame = 1
             if self.frame < 5:
                 self.image = f'bug{self.frame}'
-            if self.x < WIDTH / 2:
+            if self.x < (WIDTH - offset) / 2:
                 self.x += self.speed
-            elif self.x > WIDTH / 2:
+            elif self.x > (WIDTH - offset) / 2:
                 self.x -= self.speed
             if self.y < HEIGHT / 2:
                 self.y += self.speed
@@ -634,9 +699,9 @@ class Wolf(Bug):
                 self.frame = 1
             if self.frame < 6:
                 self.image = f'wolf_wd_{self.frame}'
-            if self.x < WIDTH / 2:
+            if self.x < (WIDTH - offset) / 2:
                 self.x += self.speed
-            elif self.x > WIDTH / 2:
+            elif self.x > (WIDTH - offset) / 2:
                 self.x -= self.speed
             if self.y < HEIGHT / 2:
                 self.y += self.speed
@@ -785,11 +850,14 @@ class Gamestate(StateMachine):
                         if dave.wood >= 2:
                             if dave.stone >= 1:
                                 if dave.grass >= 2:
-                                    hotbaritems.append(Spear())
-                                    dave.wood -= 2
-                                    dave.stone -= 1
-                                    dave.grass -= 2
-                                    self.mouse_holded = True
+                                    if not dave.encumbered:
+                                        hotbaritems.append(Spear())
+                                        dave.wood -= 2
+                                        dave.stone -= 1
+                                        dave.grass -= 2
+                                        self.mouse_holded = True
+                                    else:
+                                        screen.draw.text('You are Encumbered', (WIDTH / 2, 100), color='red')
             else:
                 self.mouse_holded = False
             #icon0 availability
@@ -818,15 +886,20 @@ class Gamestate(StateMachine):
                 icons[2].active = False
 
             if dave.wood >= 2 and dave.stone >= 1 and dave.grass >= 2:
-                for hotbar in hotbars:
-                    if isinstance(hotbar, Hotbar):
-                        if hotbar.occupied:
-                            icons[3].active = False
-                        else:
-                            icons[3].active = True
-                            break
+                if not dave.encumbered:
+                    for hotbar in hotbars:
+                        if isinstance(hotbar, Hotbar):
+                            if hotbar.occupied:
+                                icons[3].active = False
+                            else:
+                                icons[3].active = True
+                                break
+                    else:
+                        print('You have full hotbar')
             else:
                 icons[3].active = False
+
+
 
             for idx, icon in enumerate(icons):
                 if not icon.active:
@@ -858,9 +931,12 @@ class Gamestate(StateMachine):
                 bug.update()
             for item in hotbaritems:
                 item.update()
+
+
             for hotbar in hotbars:
-                if isinstance(hotbar,Hotbar):
+                if isinstance(hotbar, Hotbar):
                     hotbar.update()
+
 
 
 
@@ -1020,11 +1096,21 @@ class Gamestate(StateMachine):
                 screen.draw.text('Spear', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
                 screen.draw.text('Aim behind target', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black', fontsize = 20)
                 screen.draw.text('right-click to throw', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black', fontsize = 18)
-                screen.draw.text('requirements:', (descbar.x, descbar.top + 60), anchor=(0.5, 0.5), color='black', fontsize = 20)
-                screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)),(descbar.x - 45, descbar.top + 80))
-                screen.draw.text(' x2', (descbar.x - 10, descbar.top + 95), anchor=(0.5, 0.5), color='black',fontsize=24)
-                screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),(descbar.x + 5, descbar.top + 80))
-                screen.draw.text(' x1', (descbar.x + 40, descbar.top + 95), anchor=(0.5, 0.5), color='black',fontsize=24)
+                screen.draw.text('low durability', (descbar.x, descbar.top + 58), anchor=(0.5, 0.5), color='black', fontsize = 18)
+                screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black',
+                                 fontsize=20)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)),
+                            (descbar.x - 50, descbar.top + 75))
+                screen.draw.text(' x2', (descbar.x - 40, descbar.top + 110), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/stones.png'), (25, 25)),
+                            (descbar.x - 15, descbar.top + 75))
+                screen.draw.text(' x1', (descbar.x - 5, descbar.top + 110), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),
+                            (descbar.x + 20, descbar.top + 75))
+                screen.draw.text(' x2', (descbar.x + 30, descbar.top + 110), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
 
 
             #screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
