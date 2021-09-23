@@ -747,15 +747,18 @@ class Gamestate(StateMachine):
 
                     elif self.icon_hover(1):
                             if dave.wood >= 8:
-                                if len(envbuildings) != 0:
-                                    if not envbuildings[-1].building:
+                                if dave.grass >= 4:
+                                    if len(envbuildings) != 0:
+                                        if not envbuildings[-1].building:
+                                            envbuildings.append(Barricade())
+                                            dave.wood -= 8
+                                            dave.grass -= 4
+                                            self.mouse_holded = True
+                                    else:
                                         envbuildings.append(Barricade())
                                         dave.wood -= 8
+                                        dave.grass -= 4
                                         self.mouse_holded = True
-                                else:
-                                    envbuildings.append(Barricade())
-                                    dave.wood -= 8
-                                    self.mouse_holded = True
 
                     elif self.icon_hover(2):
                             if dave.wood >= 10:
@@ -793,7 +796,7 @@ class Gamestate(StateMachine):
                 icons[0].active = False
 
 
-            if dave.wood >= 8:
+            if dave.wood >= 8 and dave.grass >= 4:
                 icons[1].active = True
             else:
                 icons[1].active = False
@@ -980,12 +983,15 @@ class Gamestate(StateMachine):
                 screen.draw.text('requirements:', (descbar.x, descbar.top + 60), anchor=(0.5, 0.5), color='black', fontsize = 20)
                 screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)), (descbar.x - 45, descbar.top + 80))
                 screen.draw.text(' x8', (descbar.x - 10, descbar.top + 95), anchor=(0.5, 0.5), color='black',fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),(descbar.x + 5, descbar.top + 80))
+                screen.draw.text(' x4', (descbar.x + 40, descbar.top + 95), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
                 #screen.blit('lumber', (descbar.x, descbar.top + 80))
             if self.icon_hover(2):
                 screen.draw.text('Tower', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
             if self.icon_hover(3):
                 screen.draw.text('Spear', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
-lulok
+
 
 
             #screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
