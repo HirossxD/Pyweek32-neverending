@@ -63,7 +63,9 @@ class Spear(Actor):
         self.in_hand = False
         self.icon.angle = -45
 
-
+    def Dropped(self):
+        #self.harmful = False
+        self.pos = self.throwed_direction
 
     def update(self):
         #need optimisation later :D
@@ -86,6 +88,8 @@ class Spear(Actor):
 
         if self.pos == self.throwed_direction:
             self.harmful = False
+
+
 
 
         if self.in_hand:
@@ -117,21 +121,25 @@ class Spear(Actor):
                 for enemy in enemies:
                     if self.colliderect(enemy):
                         if not enemy.dead:
-                            enemy.hp -= 2
-                            self.throwed_direction = self.pos
+                            if self.harmful:
+                                enemy.hp -= 2
+                                self.throwed_direction = self.pos
 
-                if self.x < self.throwed_direction[0]:
-                    self.x += 5
-                if self.x > self.throwed_direction[0]:
-                    self.x -= 5
-                if self.y < self.throwed_direction[1]:
-                    self.y += 5
-                if self.y > self.throwed_direction[1]:
-                    self.y -= 5
-                if abs(self.x - self.throwed_direction[0]) < 8 and abs(self.y - self.throwed_direction[1]) < 8:
-                    self.pos = self.throwed_direction
+                animate(self,tween='linear', duration=0.4, pos = self.throwed_direction)
+                if abs(self.x - self.throwed_direction[0]) < 5 and abs(self.y - self.throwed_direction[1]) < 5:
+                    self.throwed_direction = self.pos
+                # if self.x < self.throwed_direction[0]:
+                #     self.x += 5
+                # if self.x > self.throwed_direction[0]:
+                #     self.x -= 5
+                # if self.y < self.throwed_direction[1]:
+                #     self.y += 5
+                # if self.y > self.throwed_direction[1]:
+                #     self.y -= 5
 
-        if self.durability <=0:
+
+
+        if self.durability <= 0:
             if not self.harmful:
                 hotbaritems.remove(self)
 
