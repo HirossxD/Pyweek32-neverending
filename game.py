@@ -81,7 +81,7 @@ class Spear(Actor):
         self.in_hand = False
         self.placedinhotbar = False
         if self.throwed_direction == None:
-            self.durability -= 5
+            self.durability -= 4
             self.throwed_direction = pygame.mouse.get_pos()
 
     def update(self):
@@ -382,12 +382,12 @@ class Branch(Actor):
 
         self.fall()
         if self.colliderect(dave):
-            dave.stone += 1
+            dave.wood += 1
             loot.remove(self)
         elif workers != []:
             for worker in workers:
                 if self.colliderect(worker):
-                    dave.stone += 1
+                    dave.wood += 1
                     loot.remove(self)
                     break
 
@@ -465,12 +465,11 @@ class Dave(Actor):
         self.goingleft = False
         self.x = (WIDTH - offset) / 2
         self.y = HEIGHT / 2 + 40
-        self.wood = 0 + 50
-        self.leather = 0 + 20
-        self.stone = 0 + 50
-        self.grass = 10 + 50
-        self.rope = 10
-        self.xp = 50
+        self.wood = 0 #+ 50
+        self.leather = 0 #+ 20
+        self.stone = 0 #+ 50
+        self.grass = 0 #+ 50
+        self.xp = 0 #+ 50
         self.lvl = 0
         self.buildingradius = 150
         self.spears = 0
@@ -482,6 +481,7 @@ class Dave(Actor):
         self.hotbarusage = 0
         self.workpower = 1
         self.idle = False
+        self.wolftimer = 30
     def update(self):
         #print(pygame.time.get_ticks() / 1000)
         #print(len(self.active_throwns))
@@ -767,6 +767,7 @@ class Gamestate(StateMachine):
         global mouse_holded
         global keypressed
         global framecounter
+
         if self.is_init:
             self.start()
         if self.is_menu:
@@ -874,13 +875,16 @@ class Gamestate(StateMachine):
             else:
                 self.mouse_holded = False
             #icon0 availability
-            if len(workers) < 2:
+            if len(tents) < 2:
                 if dave.xp >= 50:
                     icons[0].active = True
-            elif dave.xp >= 100 and len(workers) < 3:
-                icons[0].active = True
-            else:
-                icons[0].active = False
+                else:
+                    icons[0].active = False
+            elif len(tents) < 4:
+                if dave.xp >= 100:
+                    icons[0].active = True
+                else:
+                    icons[0].active = False
 
             #icon1
             if dave.wood >= 8 and dave.grass >= 4:
@@ -929,9 +933,11 @@ class Gamestate(StateMachine):
             framecounter += 1
             if framecounter > 1000:
                 framecounter = 0
-            if pygame.time.get_ticks() / 1000 > 60:
-                if framecounter % 999 == 0:
+            if pygame.time.get_ticks() / 1000 > dave.wolftimer:
                     enemies.append(Wolf())
+                    dave.wolftimer += 30
+
+
             if framecounter %660 == 0:
                 enemies.append(Bug())
 
@@ -1024,6 +1030,7 @@ class Gamestate(StateMachine):
                             Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.maxwork, 5)),(200, 200, 0))
                         screen.draw.filled_rect(
                             Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.working_status, 5)),(0, 0, 200))
+            screen.blit(pygame.image.load('images/lista.png'), (1152, 0))
             for idx, icon in enumerate(icons):
                 icon.draw()
                 if inactiveicons[idx].pos == icon.pos:
@@ -1066,6 +1073,8 @@ class Gamestate(StateMachine):
                     screen.draw.filled_rect(
                         Rect((item.icon.x - item.icon.width / 4, item.icon.y + item.icon.height / 3), (item.durability, 5)),(200, 200, 0))
             #icons help desc
+
+
             for idx, icon in enumerate(icons):
                 if self.icon_hover(idx):
                     descbar.draw()
@@ -1128,16 +1137,14 @@ class Gamestate(StateMachine):
 
 
             #screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
-            screen.blit('lumber',(WIDTH - 100, 10))
-            screen.draw.text(f' x {dave.wood}', (WIDTH - 70 , 20), color='black')
-            screen.blit('stones', (WIDTH - 100, 50))
-            screen.draw.text(f' x {dave.stone}', (WIDTH - 70, 55), color='black')
-            screen.blit('grassfiber',(WIDTH - 98, 80))
-            screen.draw.text(f' x {dave.grass}', (WIDTH - 70, 88), color='black')
-            screen.blit('rope', (WIDTH - 100, 115))
-            screen.draw.text(f' x {dave.rope}', (WIDTH - 70, 120), color='black')
-            screen.blit('leather',(WIDTH - 100, 150))
-            screen.draw.text(f' x {dave.leather}', (WIDTH - 70, 155), color='black')
+            screen.blit('lumber',(WIDTH - 80, 10))
+            screen.draw.text(f' x {dave.wood}', (WIDTH - 50 , 20), color='black')
+            screen.blit('stones', (WIDTH - 80, 50))
+            screen.draw.text(f' x {dave.stone}', (WIDTH - 50, 55), color='black')
+            screen.blit('grassfiber',(WIDTH - 80, 80))
+            screen.draw.text(f' x {dave.grass}', (WIDTH - 50, 88), color='black')
+            screen.blit('leather',(WIDTH - 80, 115))
+            screen.draw.text(f' x {dave.leather}', (WIDTH - 50, 120), color='black')
 
 
             screen.draw.text(f'XP: {dave.xp}', (WIDTH / 2, 10), color='black')
@@ -1167,7 +1174,7 @@ hotbars[-1].pos = hotbars[0].pos
 
 #build icons
 icons.append(Icon())
-icons[-1].pos = (WIDTH - 2 * icons[-1].width - 10, 300)
+icons[-1].pos = (WIDTH - 2 * icons[-1].width - 8, 324)
 icons.append(Icon())
 icons[-1].left = icons[len(icons) - 2].right + 10
 icons[-1].y = icons[len(icons) - 2].y
@@ -1178,7 +1185,7 @@ icons[-1].x = icons[0].x
 # craft icons
 
 icons.append(Icon())
-icons[-1].top = icons[0].bottom + 100
+icons[-1].top = icons[0].bottom + 126
 icons[-1].x = icons[0].x
 
 inactiveicons = []
