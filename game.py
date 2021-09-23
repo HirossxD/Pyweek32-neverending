@@ -295,6 +295,9 @@ class Smalltower(Actor):
             if self.hp <= 0:
                 for harmingbug in self.harmingentities:
                     harmingbug.speed = 0.5
+                for branch in range(1, randint(2, 8)):
+                    loot.append(Branch())
+                    loot[-1].pos = self.pos
                 envbuildings.remove(self)
 
 
@@ -370,17 +373,14 @@ class Branch(Actor):
         super().__init__(choice(['branch_1', 'branch_2']))
         self.active = False
         self.maxangle = randint (310, 400)
+        self.pos = trees[0].pos
     def fall(self):
         if self.angle < self.maxangle:
             self.angle += 5
             self.y += 1
     def update(self):
-        if not self.active:
-            self.pos = trees[0].pos
-            print('branch')
-            self.active = True
-        else:
-            self.fall()
+
+        self.fall()
         if self.colliderect(dave):
             dave.stone += 1
             loot.remove(self)
@@ -449,6 +449,9 @@ class Barricade(Actor):
         if self.hp <= 0:
             for harmingbug in self.harmingentities:
                 harmingbug.speed = 0.5
+            for branch in range(1, randint(2, 4)):
+                loot.append(Branch())
+                loot[-1].pos = self.pos
             envbuildings.remove(self)
 
 class Dave(Actor):
@@ -729,6 +732,16 @@ class Gamestate(StateMachine):
     start = init.to(menu)
     play = menu.to(game)
 
+    def Buildingcollision(self, cls):
+        if envbuildings != []:
+            for building in envbuildings:
+                if cls != building:
+                    if cls.colliderect(building) or cls.colliderect(Tent()):
+                        return True
+                    else:
+                        return False
+
+
     def icon_hover(self, icon):
         mousepos = pygame.mouse.get_pos(2)
         if icons[icon].left < mousepos[0] < icons[icon].right:
@@ -945,11 +958,12 @@ class Gamestate(StateMachine):
                     x1, y1 = building.pos
                     x2, y2 = dave.pos
                     distance = math.hypot(x1 - x2, y1 - y2)
-                    if distance < dave.buildingradius:
+                    actor_x.pos = building.pos
+                    if distance < dave.buildingradius and not self.Buildingcollision(building):
                         building.canplace = True
                     else:
                         building.canplace = False
-                        actor_x.pos = building.pos
+
                 building.update()
             for thrown in towerthrown:
                 thrown.update()
