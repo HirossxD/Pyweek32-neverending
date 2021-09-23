@@ -14,7 +14,6 @@ from pygame.locals import *
 import sys
 import math
 
-
 background = None
 tents = []
 enemies = []
@@ -350,7 +349,7 @@ class Branch(Actor):
 
 class Barricade(Actor):
     def __init__(self):
-        super().__init__('barricade')
+        super().__init__('barricade_rotated')
         self.maxhp = 20
         self.hp = self.maxhp
         self.active = False
@@ -374,15 +373,15 @@ class Barricade(Actor):
             elif mousestate[2]:
                 if self.rotated:
                     if not self.holding_mouse:
-                        self.image = 'barricade'
+                        #self.image = 'barricade'
                         self.rotated = False
-                        #self.angle -= 90
+                        self.angle -= 90
                         self.holding_mouse = True
                 else:
                     if not self.holding_mouse:
-                        self.image = 'barricade_rotated'
+                        #self.image = 'barricade_rotated'
                         self.rotated = True
-                        #self.angle += 90
+                        self.angle += 90
                         self.holding_mouse = True
             else:
                 self.holding_mouse = False
@@ -761,41 +760,48 @@ class Gamestate(StateMachine):
                                         self.mouse_holded = True
 
                     elif self.icon_hover(2):
-                            if dave.wood >= 10:
-                                if dave.stone >= 10:
-                                    if len(envbuildings) != 0:
-                                        if not envbuildings[-1].building:
+                        towers_count = sum(1 for x in envbuildings if isinstance(x, Smalltower))
+                        if dave.wood >= 10:
+                            if dave.stone >= 10:
+                                if dave.grass >= 4:
+                                    if towers_count < len(workers) + 1:
+                                        if len(envbuildings) != 0:
+                                            if not envbuildings[-1].building:
+                                                envbuildings.append(Smalltower())
+                                                dave.wood -= 10
+                                                dave.stone -= 10
+                                                dave.grass -= 4
+                                                self.mouse_holded = True
+                                        else:
                                             envbuildings.append(Smalltower())
                                             dave.wood -= 10
                                             dave.stone -= 10
+                                            dave.grass -= 4
                                             self.mouse_holded = True
-                                    else:
-                                        envbuildings.append(Smalltower())
-                                        dave.wood -= 10
-                                        dave.stone -= 10
-                                        self.mouse_holded = True
 
 
 
                     elif self.icon_hover(3):
-                            if dave.wood >= 2:
-                                if dave.stone >= 1:
-                                    if dave.grass >= 2:
-                                        hotbaritems.append(Spear())
-                                        dave.wood -= 2
-                                        dave.stone -= 1
-                                        dave.grass -= 2
-                                        self.mouse_holded = True
+                        if dave.wood >= 2:
+                            if dave.stone >= 1:
+                                if dave.grass >= 2:
+                                    hotbaritems.append(Spear())
+                                    dave.wood -= 2
+                                    dave.stone -= 1
+                                    dave.grass -= 2
+                                    self.mouse_holded = True
             else:
                 self.mouse_holded = False
-
+            #icon0 availability
             if len(workers) < 2:
                 if dave.xp >= 50:
                     icons[0].active = True
+            elif dave.xp >= 100 and len(workers) < 3:
+                icons[0].active = True
             else:
                 icons[0].active = False
 
-
+            #icon1
             if dave.wood >= 8 and dave.grass >= 4:
                 icons[1].active = True
             else:
@@ -803,13 +809,14 @@ class Gamestate(StateMachine):
 
             towers_count = sum(1 for x in envbuildings if isinstance(x, Smalltower))
 
-            if dave.wood >= 10 and dave.stone >= 10:
+            if dave.wood >= 10 and dave.stone >= 10 and dave.grass >= 4:
                 if towers_count < len(workers) + 1:
                     icons[2].active = True
                 else:
                     icons[2].active = False
             else:
                 icons[2].active = False
+
             if dave.wood >= 2 and dave.stone >= 1 and dave.grass >= 2:
                 for hotbar in hotbars:
                     if isinstance(hotbar, Hotbar):
@@ -821,6 +828,11 @@ class Gamestate(StateMachine):
             else:
                 icons[3].active = False
 
+            for idx, icon in enumerate(icons):
+                if not icon.active:
+                    inactiveicons[idx].pos = icons[idx].pos
+                else:
+                    inactiveicons[idx].pos = (-200, -200)
 
             for worker in workers:
                 worker.update()
@@ -922,9 +934,12 @@ class Gamestate(StateMachine):
                             Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.maxwork, 5)),(200, 200, 0))
                         screen.draw.filled_rect(
                             Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.working_status, 5)),(0, 0, 200))
-            for icon in icons:
-                if icon.active:
-                    icon.draw()
+            for idx, icon in enumerate(icons):
+                icon.draw()
+                if inactiveicons[idx].pos == icon.pos:
+                    inactiveicons[idx].draw()
+
+
             for item in loot:
                 item.draw()
 
@@ -980,7 +995,8 @@ class Gamestate(StateMachine):
             if self.icon_hover(1):
                 screen.draw.text('Barricade', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='white')
                 screen.draw.text('Block your enemies', (descbar.x, descbar.top + 35), anchor=(0.5, 0.5), color='black', fontsize = 20)
-                screen.draw.text('requirements:', (descbar.x, descbar.top + 60), anchor=(0.5, 0.5), color='black', fontsize = 20)
+                screen.draw.text('right-click to rotate', (descbar.x, descbar.top + 50), anchor=(0.5, 0.5), color='black', fontsize = 18)
+                screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black', fontsize = 20)
                 screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)), (descbar.x - 45, descbar.top + 80))
                 screen.draw.text(' x8', (descbar.x - 10, descbar.top + 95), anchor=(0.5, 0.5), color='black',fontsize=24)
                 screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),(descbar.x + 5, descbar.top + 80))
@@ -989,9 +1005,26 @@ class Gamestate(StateMachine):
                 #screen.blit('lumber', (descbar.x, descbar.top + 80))
             if self.icon_hover(2):
                 screen.draw.text('Tower', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
+                screen.draw.text('shoots rocks', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black',fontsize=20)
+                screen.draw.text('can\'t have more \n', (descbar.x, descbar.top + 50), anchor=(0.5, 0.5),color='black', fontsize=18)
+                screen.draw.text('than people', (descbar.x, descbar.top + 53), anchor=(0.5, 0.5),color='black', fontsize=18)
+                screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black',fontsize=20)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)),(descbar.x - 50, descbar.top + 75))
+                screen.draw.text(' x10', (descbar.x - 40, descbar.top + 110), anchor=(0.5, 0.5), color='black',fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/stones.png'), (25, 25)),(descbar.x - 15, descbar.top + 75))
+                screen.draw.text(' x10', (descbar.x - 5, descbar.top + 110), anchor=(0.5, 0.5), color='black',fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),(descbar.x + 20, descbar.top + 75))
+                screen.draw.text(' x4', (descbar.x + 30, descbar.top + 110), anchor=(0.5, 0.5), color='black',fontsize=24)
+
             if self.icon_hover(3):
                 screen.draw.text('Spear', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
-
+                screen.draw.text('Aim behind target', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black', fontsize = 20)
+                screen.draw.text('right-click to throw', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black', fontsize = 18)
+                screen.draw.text('requirements:', (descbar.x, descbar.top + 60), anchor=(0.5, 0.5), color='black', fontsize = 20)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)),(descbar.x - 45, descbar.top + 80))
+                screen.draw.text(' x2', (descbar.x - 10, descbar.top + 95), anchor=(0.5, 0.5), color='black',fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),(descbar.x + 5, descbar.top + 80))
+                screen.draw.text(' x1', (descbar.x + 40, descbar.top + 95), anchor=(0.5, 0.5), color='black',fontsize=24)
 
 
             #screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
@@ -1019,6 +1052,7 @@ trees.append(Tree())
 stones.append(Stone())
 grasses.append(Grass())
 descbar = Actor('descriptionbar')
+
 hotbars = []
 for i in range(0, 8):
     thislen = len(hotbars)
@@ -1047,6 +1081,9 @@ icons.append(Icon())
 icons[-1].top = icons[0].bottom + 100
 icons[-1].x = icons[0].x
 
+inactiveicons = []
+for icon in icons:
+    inactiveicons.append(Actor('inactive_icon'))
 
 def on_mouse_down(pos, button):
     #print("Mouse button", button, "clicked at", pos)
