@@ -179,7 +179,7 @@ class Worker(Actor):
 
         if self.right >= WIDTH - offset:
                 self.dx *= -1
-                self.right = WIDTH - offset -1
+                self.right = WIDTH - offset - 1
 
         if self.left <= 0:
                 self.left = 1
@@ -483,6 +483,8 @@ class Dave(Actor):
             self.stone = 50
             self.grass = 50
             self.hp = self.maxhp
+            if len(enemies) < 3:
+                enemies.append(Wolf())
             for tent in tents:
                 tent.hp = tent.maxhp
         #print(pygame.time.get_ticks() / 1000)
@@ -760,8 +762,8 @@ class Wolf(Bug):
         #     if self.colliderect(worker):
         #         pass
         if self.dead:
-            if self.frame < 6:
-                self.image = f'bug_die{self.frame}'
+            if self.frame < 7:
+                self.image = f'wolf_dead_{self.frame}'
             if self.frame > 15:
                 dave.leather += 1
                 enemies.remove(self)
