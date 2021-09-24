@@ -474,6 +474,7 @@ class Dave(Actor):
         self.workpower = 1
         self.idle = False
         self.wolftimer = 30
+        self.dead = False
     def update(self):
         #print(pygame.time.get_ticks() / 1000)
         #print(len(self.active_throwns))
@@ -574,7 +575,18 @@ class Dave(Actor):
             workers.append(Worker())
             workers[-1].pos = tents[-1].pos
             dave.xp += 1
+        if not self.dead:
+            if self.hp <= 0:
+                self.dead = True
 
+        if self.dead:
+            if tents:
+                self.pos = tents[0].pos
+                if framecounter &50== 0:
+                    self.hp += 1
+                    if self.hp >= self.maxhp:
+                        self.dead = False
+                #lulok
         for item in hotbaritems:
             if self.colliderect(item):
                 if isinstance(item, Spear):
@@ -638,8 +650,8 @@ class Tent(Actor):
         super().__init__('tent')
         self.x = (WIDTH - offset) / 2
         self.y = HEIGHT / 2
-        self.maxhp = 30
-        self.hp = 30
+        self.maxhp = 40
+        self.hp = self.maxhp
 
 
 class Bug(Actor):
@@ -702,7 +714,7 @@ class Wolf(Bug):
         self.image = 'wolf_wd_1'
         self.hp = 5
         self.hit_time = None
-        self.damage = 2
+        self.damage = 3
     def update(self):
 
         if framecounter %5 == 0:
@@ -742,10 +754,10 @@ class Wolf(Bug):
             if not self.dead:
                 if self.hit_time is None:
                     self.hit_time = pygame.time.get_ticks() / 1000
-                    dave.hp -= 5
+                    dave.hp -= self.damage
                 else:
                     if self.hit_time + 1 < pygame.time.get_ticks() / 1000:
-                        dave.hp -= 5
+                        dave.hp -= self.damage
                         self.hit_time = pygame.time.get_ticks() / 1000
 class Gamestate(StateMachine):
     mouse_holded = False
@@ -1009,6 +1021,7 @@ class Gamestate(StateMachine):
                     descbar.topright = mousepos
 
 
+
     def draw(self):
         if self.is_menu:
             screen.clear()
@@ -1040,17 +1053,32 @@ class Gamestate(StateMachine):
                         break
                 tent.draw()
             if len(tents) < 1:
-                print('LOSED')
+                gmstate.lose()
+
+            holded_item = None
+            if hotbaritems:
+                for item in hotbaritems:
+                    if item.throwed:
+                        item.draw()
+                    if item.in_hand:
+                        holded_item = item
+
+            if holded_item is not None:
+                if not holded_item.in_hand:
+                    holded_item = None
             if not keyboard.a:
-                for item in hotbaritems:
-                    item.draw()
-            if dave.goingleft == True:
-                screen.blit(flip(dave._surf, True, False), dave.topleft)
-            if keyboard.a:
-                for item in hotbaritems:
-                    item.draw()
-            else:
-                dave.draw()
+                if hotbaritems:
+                    if holded_item is not None:
+                        holded_item.draw()
+            if not dave.dead:
+                if dave.goingleft == True:
+                    screen.blit(flip(dave._surf, True, False), dave.topleft)
+                    if keyboard.a:
+                        if hotbaritems:
+                            if holded_item is not None:
+                                holded_item.draw()
+                else:
+                    dave.draw()
             if workers != []:
                 for worker in workers:
                     worker.draw()
@@ -1189,6 +1217,11 @@ class Gamestate(StateMachine):
 
 
             screen.draw.text(f'XP: {dave.xp}', (WIDTH / 2, 10), color='black')
+
+        if self.is_game_over:
+            screen.clear()
+            screen.draw.text(f'GAME OVER', (WIDTH / 2, HEIGHT /2 + 80), color='white', fontsize = 50)
+            screen.draw.text(f'Score: {dave.xp}', (WIDTH / 2, HEIGHT /2 + 150), color='white')
 
 
 gmstate = Gamestate()
