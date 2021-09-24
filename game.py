@@ -337,7 +337,32 @@ class Smalltower(Actor):
                     loot[-1].pos = self.pos
                 envbuildings.remove(self)
 
-
+        if self.building:
+            if len(envbuildings) > 1:
+                if self.colliderect(envbuildings[0]):
+                    self.canplace = False
+            if len(envbuildings) > 2:
+                if self.colliderect(envbuildings[1]):
+                    self.canplace = False
+            if len(envbuildings) > 3:
+                if self.colliderect(envbuildings[2]):
+                    self.canplace = False
+            if len(envbuildings) > 4:
+                if self.colliderect(envbuildings[3]):
+                    self.canplace = False
+            if len(envbuildings) > 5:
+                if self.colliderect(envbuildings[4]):
+                    self.canplace = False
+            if len(envbuildings) > 6:
+                if self.colliderect(envbuildings[5]):
+                    self.canplace = False
+            if len(envbuildings) > 7:
+                if self.colliderect(envbuildings[6]):
+                    self.canplace = False
+            if len(envbuildings) > 8:
+                if self.colliderect(envbuildings[7]):
+                    self.canplace = False
+                    
 
 class Grass(Actor):
     def __init__(self):
@@ -479,8 +504,31 @@ class Barricade(Actor):
                             harmingbug.speed = 0
                         if framecounter % 500 == 0:
                             self.hp -= 1
-
-
+        if self.building:
+            if len(envbuildings) > 1:
+                if self.colliderect(envbuildings[0]):
+                    self.canplace = False
+            if len(envbuildings) > 2:
+                if self.colliderect(envbuildings[1]):
+                    self.canplace = False
+            if len(envbuildings) > 3:
+                if self.colliderect(envbuildings[2]):
+                    self.canplace = False
+            if len(envbuildings) > 4:
+                if self.colliderect(envbuildings[3]):
+                    self.canplace = False
+            if len(envbuildings) > 5:
+                if self.colliderect(envbuildings[4]):
+                    self.canplace = False
+            if len(envbuildings) > 6:
+                if self.colliderect(envbuildings[5]):
+                    self.canplace = False
+            if len(envbuildings) > 7:
+                if self.colliderect(envbuildings[6]):
+                    self.canplace = False
+            if len(envbuildings) > 8:
+                if self.colliderect(envbuildings[7]):
+                    self.canplace = False
 
 
         if self.hp <= 0:
@@ -547,8 +595,11 @@ class Dave(Actor):
             self.stone = 50
             self.grass = 50
             self.hp = self.maxhp
+            self.xp = 100
+
             if len(enemies) < 3:
                 enemies.append(Wolf())
+                workers.append(Worker())
             for tent in tents:
                 tent.hp = tent.maxhp
         #print(pygame.time.get_ticks() / 1000)
@@ -918,14 +969,15 @@ class Gamestate(StateMachine):
     start = init.to(menu)
     play = menu.to(game)
     lose = game.to(game_over)
-    def Buildingcollision(self, cls):
-        if envbuildings != []:
-            for building in envbuildings:
-                if cls != building:
-                    if cls.colliderect(building) or cls.colliderect(Tent()):
-                        return True
-                    else:
-                        return False
+    # def Buildingcollision(self, cls):
+    #     if envbuildings:
+    #         for bld in envbuildings:
+    #             # if type(cls) != type(bld):
+    #             if cls.colliderect(bld):
+    #                 return True
+    #                 break
+    #             else:
+    #                 return False
 
 
     def icon_hover(self, icon):
@@ -985,6 +1037,8 @@ class Gamestate(StateMachine):
         if self.is_game: ########################################## game update
             mousestate = pygame.mouse.get_pressed(3)
             mousepos = pygame.mouse.get_pos(2)
+            if mousestate[1]:
+                print(mousepos)
             if mousestate[0]:
                 if not self.mouse_holded:
                     if self.icon_hover(0):
@@ -1178,10 +1232,19 @@ class Gamestate(StateMachine):
                     x2, y2 = dave.pos
                     distance = math.hypot(x1 - x2, y1 - y2)
                     actor_x.pos = building.pos
-                    if distance < dave.buildingradius and not self.Buildingcollision(building):
-                        building.canplace = True
-                    else:
-                        building.canplace = False
+                    if distance < dave.buildingradius:
+                        # if self.Buildingcollision(building):
+                           # building.canplace = False
+                        if 417 < mousepos[0] < 726 and 316 < mousepos[1] < 449:
+                            building.canplace = False
+                        # (417, 316)
+                        # (726, 449)
+                        else:
+                            building.canplace = True
+
+
+
+
 
                 building.update()
             if dave.active_throwns:
@@ -1199,6 +1262,7 @@ class Gamestate(StateMachine):
 
 
     def draw(self):
+        mousepos = pygame.mouse.get_pos()
         if self.is_menu:
             screen.clear()
             #screen.fill('white')
@@ -1225,9 +1289,12 @@ class Gamestate(StateMachine):
             for grass in grasses:
                 grass.draw()
             for build in envbuildings:
+                if build.building:
+                    if 417 < mousepos[0] < 726 and 316 < mousepos[1] < 449:
+                        tentzone.draw()
                 build.draw()
                 if build.building:
-                    screen.draw.circle((dave.pos), dave.buildingradius, (0, 50 ,200))
+                    screen.draw.circle(dave.pos, dave.buildingradius, (0, 50 , 200))
                 if build.type == 'tower':
                     for thrown in build.towerthrown:
                         thrown.draw()
@@ -1430,6 +1497,8 @@ enemies.append(Bug())
 tents.append(Tent())
 dave = Dave()
 actor_x = Actor('actor_x')
+tentzone = Actor('tentzone')
+tentzone.topleft = (417, 316)
 tree = Tree()
 stone = Stone()
 grasses.append(Grass())
