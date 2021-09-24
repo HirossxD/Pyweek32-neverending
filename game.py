@@ -73,7 +73,7 @@ class Spear(Actor):
         self.in_hand = False
         self.placedinhotbar = False
         if self.throwed_direction == None:
-            self.durability -= 4
+            self.durability -= 3
             self.throwed_direction = pygame.mouse.get_pos()
 
     def update(self):
@@ -148,6 +148,38 @@ class Spear(Actor):
             if not self.harmful:
                 hotbaritems.remove(self)
 
+class Shield(Spear):
+    def __init__(self):
+        super().__init__()
+        self.image = 'shield_front'
+        self.icon = Actor('shield_hotbaricon')
+        #polish to image shield back when going left
+    def Block(self):
+        for bug in enemies:
+            if self.colliderect(bug):
+                bug.knocked = True
+                self.durability -= 1
+
+
+                # animate(bug, duration=0.4, pos=(knockpos_x, knockpos_y))
+
+                # knockpos_x, knockpos_y = pygame.mouse.get_pos()
+                # a = pygame.Vector2(bug.pos)
+                # b = pygame.Vector2(knockpos_x, knockpos_y)
+                # c = a.distance_to(b)
+                #
+                # if a.distance_to(b) > 200:
+                #     animate(bug, duration=0.4, pos=(knockpos_x, knockpos_y) )
+                #     bug.speed = 0.5
+
+
+
+                # if abs(dave.x - knockpos_x) > 30 and abs(knockpos_y - dave.y) > 30:
+                #     bug.pos = (knockpos_x, knockpos_y)
+                #     self.throwed_direction = self.pos
+
+    def Throw(self):
+        self.Block()
 
 class Icon(Actor):
     def __init__(self):
@@ -159,7 +191,9 @@ class Icon(Actor):
             super().__init__('tower_icon')
         if len(icons) == 3:
             super().__init__('spear_icon')
-        if len(icons) > 3:
+        if len(icons) == 4:
+            super().__init__('shield_icon')
+        if len(icons) > 4:
             super().__init__('plus')
 
         self.active = True
@@ -475,6 +509,8 @@ class Dave(Actor):
         self.idle = False
         self.wolftimer = 30
         self.dead = False
+        self.protected = False
+        self.in_hand = None
     def update(self):
 
         ##godmode
@@ -624,6 +660,11 @@ class Dave(Actor):
                                         item.throwed_direction = None
                                         item.harmful = False
                                         break
+
+                if isinstance(item, Shield):
+                    if item.in_hand:
+                        self.protected = True
+                        break
         self.hotbarusage = 0
         for hotbar in hotbars:
             if isinstance(hotbar, Hotbar):
@@ -739,6 +780,8 @@ class Wolf(Bug):
         self.hp = self.maxhp
         self.hit_time = None
         self.damage = 3
+        self.knocked = False
+        self.stucked = False
     def update(self):
 
         if framecounter %5 == 0:
@@ -773,15 +816,51 @@ class Wolf(Bug):
                 if framecounter % 50 == 0:
                     tent.hp -= self.damage
 
-
+        if self.knocked:
+            x1, y1 = self.pos
+            x2, y2 = dave.pos
+            distance = math.hypot(x1 - x2, y1 - y2)
+            if distance < 120:
+                if self.x < dave.x:
+                    self.x -= 5
+                else:
+                    self.x += 5
+                if self.y < dave.y:
+                    self.y -= 5
+                else:
+                    self.y += 5
+                if self.colliderect(Tent()):
+                    self.stucked = True
+                if self.colliderect(Barricade()):
+                    self.stucked = True
+                if self.colliderect(Smalltower()):
+                    self.stucked = True
+            else:
+                self.knocked = False
+                self.speed = 0.5
+        if self.stucked:
+            self.x += 5
+            self.y += 5
+            if not self.colliderect(Tent()):
+                self.stucked = False
+            if not self.colliderect(Barricade()):
+                self.stucked = False
+            if not self.colliderect(Smalltower()):
+                self.stucked = False
         if self.colliderect(dave):
             if not self.dead:
                 if self.hit_time is None:
                     self.hit_time = pygame.time.get_ticks() / 1000
-                    dave.hp -= self.damage
+                    if dave.protected:
+                        dave.in_hand.durability -= self.damage / 2
+                    else:
+                        dave.hp -= self.damage
                 else:
                     if self.hit_time + 1 < pygame.time.get_ticks() / 1000:
-                        dave.hp -= self.damage
+                        if dave.protected:
+                            dave.in_hand.durability -= self.damage / 2
+                        else:
+                            dave.hp -= self.damage
                         self.hit_time = pygame.time.get_ticks() / 1000
 class Gamestate(StateMachine):
     mouse_holded = False
@@ -932,6 +1011,16 @@ class Gamestate(StateMachine):
                                         self.mouse_holded = True
                                     else:
                                         screen.draw.text('You are Encumbered', (WIDTH / 2, 100), color='red')
+                    elif self.icon_hover(4):
+                        if dave.wood >= 4:
+                            if dave.grass >= 4:
+                                if not dave.encumbered:
+                                    hotbaritems.append(Shield())
+                                    dave.wood -= 4
+                                    dave.grass -= 4
+                                    self.mouse_holded = True
+                                else:
+                                    screen.draw.text('You are Encumbered', (WIDTH / 2, 100), color='red')
             else:
                 self.mouse_holded = False
             #icon0 availability
@@ -976,6 +1065,20 @@ class Gamestate(StateMachine):
             else:
                 icons[3].active = False
 
+            if dave.wood >= 4 and dave.grass >= 4:
+                if not dave.encumbered:
+                    for hotbar in hotbars:
+                        if isinstance(hotbar, Hotbar):
+                            if hotbar.occupied:
+                                icons[4].active = False
+                            else:
+                                icons[4].active = True
+                                break
+                    else:
+                        print('You have full hotbar')
+            else:
+                icons[4].active = False
+
 
 
             for idx, icon in enumerate(icons):
@@ -1015,6 +1118,9 @@ class Gamestate(StateMachine):
                 bug.update()
             for item in hotbaritems:
                 item.update()
+                if item.icon.pos == hotbars[-1].pos:
+                    dave.in_hand = item
+                    print('daveinhand')
 
             for hotbar in hotbars:
                 if isinstance(hotbar, Hotbar):
@@ -1234,6 +1340,21 @@ class Gamestate(StateMachine):
                             (descbar.x + 20, descbar.top + 75))
                 screen.draw.text(' x2', (descbar.x + 30, descbar.top + 110), anchor=(0.5, 0.5), color='black',
                                  fontsize=24)
+            if self.icon_hover(4):
+                screen.draw.text('Shield', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
+                screen.draw.text('Knock foes', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black', fontsize = 20)
+                screen.draw.text('with right-click', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black', fontsize = 18)
+                screen.draw.text('rather not into Tent ! ', (descbar.x, descbar.top + 58), anchor=(0.5, 0.5), color='black', fontsize = 18)
+                screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black',
+                                 fontsize=20)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)),
+                            (descbar.x - 45, descbar.top + 80))
+                screen.draw.text(' x4', (descbar.x - 10, descbar.top + 95), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),
+                            (descbar.x + 5, descbar.top + 80))
+                screen.draw.text(' x4', (descbar.x + 40, descbar.top + 95), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
 
 
             #screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
@@ -1281,7 +1402,7 @@ hotbars[-1].pos = hotbars[0].pos
 icons.append(Icon())
 icons[-1].pos = (WIDTH - 2 * icons[-1].width - 8, 324)
 icons.append(Icon())
-icons[-1].left = icons[len(icons) - 2].right + 10
+icons[-1].left = icons[len(icons) - 2].right + 8
 icons[-1].y = icons[len(icons) - 2].y
 icons.append(Icon())
 icons[-1].top = icons[0].bottom + 10
@@ -1292,6 +1413,11 @@ icons[-1].x = icons[0].x
 icons.append(Icon())
 icons[-1].top = icons[0].bottom + 126
 icons[-1].x = icons[0].x
+
+icons.append(Icon())
+icons[-1].top = icons[0].bottom + 126
+icons[-1].left = icons[len(icons) - 2].right + 8
+
 
 inactiveicons = []
 for icon in icons:
