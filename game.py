@@ -739,13 +739,14 @@ class Wolf(Bug):
 
 
         if self.colliderect(dave):
-            if self.hit_time is None:
-                self.hit_time = pygame.time.get_ticks() / 1000
-                dave.hp -= 1
-            else:
-                if self.hit_time + 1 < pygame.time.get_ticks() / 1000:
-                    dave.hp -= 1
+            if not self.dead:
+                if self.hit_time is None:
                     self.hit_time = pygame.time.get_ticks() / 1000
+                    dave.hp -= 5
+                else:
+                    if self.hit_time + 1 < pygame.time.get_ticks() / 1000:
+                        dave.hp -= 5
+                        self.hit_time = pygame.time.get_ticks() / 1000
 class Gamestate(StateMachine):
     mouse_holded = False
     init = State('init', initial= True)
@@ -1002,14 +1003,11 @@ class Gamestate(StateMachine):
             if len(grasses) < 2:
                 if framecounter %880 == 0:
                     grasses.append(Grass())
-<<<<<<< HEAD
 
-
-=======
             for idx, icon in enumerate(icons):
                 if self.icon_hover(idx):
                     descbar.topright = mousepos
->>>>>>> 8a1bf1d (game over created)
+
 
     def draw(self):
         if self.is_menu:
