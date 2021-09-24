@@ -1,0 +1,20 @@
+Mx je suradnica na osi x pre moba
+My je suradnica na osi y pre moba
+
+Cx je suradnica na osi x pre click
+Cy je suradnica na osi y pre click
+
+Mr je mob radius. inak povedane vzdialenost knockbacku
+
+funkcia ti vrati array kde prva hodnota je x kde ma mob dopadnut
+a druha hodnota je y kde ma mob dopadnut
+
+def calc_knockback_coords(Mx,My,Cx,Cy, Mr):
+	vector_x = Cx-Mx
+	vector_y = Cy-My
+	vector_length = math.sqrt((vector_x*vector_x) + (vector_y*vector_y))
+	normalized_vector_x = vector_x/vector_length
+	normalized_vector_y = vector_y/vector_length
+	coords_x = Mx + normalized_vector_x*Mr
+	coords_y = My + normalized_vector_y*Mr
+	return [coords_x, coords_y]

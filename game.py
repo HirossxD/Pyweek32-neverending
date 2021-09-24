@@ -739,7 +739,7 @@ class Bug(Actor):
             self.x = choice([-30, WIDTH + 30])
         else:
             self.x = choice([-30, WIDTH + 30, (WIDTH - offset) / 2])
-
+        self.knocked = False
         self.frame = 1
         self.hp = 1
         self.dead = False
@@ -795,6 +795,18 @@ class Wolf(Bug):
         self.damage = 3
         self.knocked = False
         self.stucked = False
+
+    def calc_knockback_coords(self,Mx, My, Cx, Cy, Mr):
+        vector_x = Cx - Mx
+        vector_y = Cy - My
+        vector_length = math.sqrt((vector_x * vector_x) + (vector_y * vector_y))
+        if vector_length == 0:
+            vector_length = 0.1
+        normalized_vector_x = vector_x / vector_length
+        normalized_vector_y = vector_y / vector_length
+        coords_x = Mx + normalized_vector_x * Mr
+        coords_y = My + normalized_vector_y * Mr
+        return [coords_x, coords_y]
     def update(self):
 
         if framecounter %5 == 0:
@@ -830,27 +842,32 @@ class Wolf(Bug):
                     tent.hp -= self.damage
 
         if self.knocked:
-            x1, y1 = self.pos
-            x2, y2 = dave.pos
-            distance = math.hypot(x1 - x2, y1 - y2)
-            if distance < 120:
-                if self.x < dave.x:
-                    self.x -= 5
-                else:
-                    self.x += 5
-                if self.y < dave.y:
-                    self.y -= 5
-                else:
-                    self.y += 5
-                if self.colliderect(Tent()):
-                    self.stucked = True
-                if self.colliderect(Barricade()):
-                    self.stucked = True
-                if self.colliderect(Smalltower()):
-                    self.stucked = True
-            else:
-                self.knocked = False
-                self.speed = 0.5
+            x1, y1 = pygame.mouse.get_pos()
+            knockback_pos = self.calc_knockback_coords(self.x, self.y, x1, y1, 120 )
+            animate(self, duration=0.4, pos=knockback_pos)
+            self.speed = 0.5
+            self.knocked = False
+            # x1, y1 = self.pos
+            # x2, y2 = dave.pos
+            # distance = math.hypot(x1 - x2, y1 - y2)
+            # if distance < 120:
+            #     if self.x < dave.x:
+            #         self.x -= 5
+            #     else:
+            #         self.x += 5
+            #     if self.y < dave.y:
+            #         self.y -= 5
+            #     else:
+            #         self.y += 5
+            #     if self.colliderect(Tent()):
+            #         self.stucked = True
+            #     if self.colliderect(Barricade()):
+            #         self.stucked = True
+            #     if self.colliderect(Smalltower()):
+            #         self.stucked = True
+            # else:
+            #     self.knocked = False
+            #     self.speed = 0.5
         if self.stucked:
             self.x += 5
             self.y += 5
@@ -1363,8 +1380,8 @@ class Gamestate(StateMachine):
             if self.icon_hover(4):
                 screen.draw.text('Shield', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
                 screen.draw.text('Knock foes', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black', fontsize = 20)
-                screen.draw.text('with right-click', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black', fontsize = 18)
-                screen.draw.text('rather not into Tent ! ', (descbar.x, descbar.top + 58), anchor=(0.5, 0.5), color='black', fontsize = 18)
+                screen.draw.text('in right-click', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black', fontsize = 18)
+                screen.draw.text('direction', (descbar.x, descbar.top + 58), anchor=(0.5, 0.5), color='black', fontsize = 18)
                 screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black',
                                  fontsize=20)
                 screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)),
