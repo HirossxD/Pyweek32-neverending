@@ -75,7 +75,10 @@ class Spear(Actor):
         if self.throwed_direction == None:
             self.durability -= 3
             self.throwed_direction = pygame.mouse.get_pos()
-
+    def cleanup(self):
+        if not self.harmful:
+            dave.in_hand = None
+            hotbaritems.remove(self)
     def update(self):
         #need optimisation later :D
 
@@ -142,16 +145,14 @@ class Spear(Actor):
                     self.throwed_direction = self.pos
 
 
-
-
         if self.durability <= 0:
-            if not self.harmful:
-                hotbaritems.remove(self)
+            self.cleanup()
+
 
 class Shield(Spear):
     def __init__(self):
         super().__init__()
-        self.image = 'shield_front'
+        self.image = 'shield_back'
         self.icon = Actor('shield_hotbaricon')
         #polish to image shield back when going left
     def Block(self):
@@ -160,13 +161,23 @@ class Shield(Spear):
                 bug.knocked = True
                 self.durability -= 1
 
+    def cleanup(self):
+        dave.in_hand = None
+        dave.protected = False
+        for hotbar in hotbars:
+            if hotbar.pos == self.icon.pos:
+                hotbar.occupied = False
+                self.icon.pos = (-200, -200)
+
+        hotbaritems.remove(self)
+
 
                 # animate(bug, duration=0.4, pos=(knockpos_x, knockpos_y))
 
                 # knockpos_x, knockpos_y = pygame.mouse.get_pos()
-                # a = pygame.Vector2(bug.pos)
-                # b = pygame.Vector2(knockpos_x, knockpos_y)
-                # c = a.distance_to(b)
+                #  a, b = pygame.Vector2(x,y)
+                #  b = pygame.Vector2(x)
+                #  c = a.distance_to(b)
                 #
                 # if a.distance_to(b) > 200:
                 #     animate(bug, duration=0.4, pos=(knockpos_x, knockpos_y) )
@@ -1178,7 +1189,23 @@ class Gamestate(StateMachine):
             tree.draw()
             for grass in grasses:
                 grass.draw()
-
+            for build in envbuildings:
+                build.draw()
+                if build.building:
+                    screen.draw.circle((dave.pos), dave.buildingradius, (0, 50 ,200))
+                if build.type == 'tower':
+                    for thrown in build.towerthrown:
+                        thrown.draw()
+                if not build.canplace:
+                    actor_x.draw()
+                if build.active:
+                    if 0 < build.hp < build.maxhp:
+                        if build.maxhp > 50:
+                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.maxhp / 2, 5)), (200, 0, 0))
+                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.hp / 2, 5)), (0, 200, 0))
+                        else:
+                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.maxhp, 5)), (200, 0, 0))
+                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.hp, 5)), (0, 200, 0))
             stone.draw()
             for tent in tents:
                 if tent.hp < tent.maxhp:
@@ -1191,30 +1218,37 @@ class Gamestate(StateMachine):
             if len(tents) < 1:
                 gmstate.lose()
 
-            holded_item = None
+
             if hotbaritems:
                 for item in hotbaritems:
                     if item.throwed:
                         item.draw()
-                    if item.in_hand:
-                        holded_item = item
 
-            if holded_item is not None:
-                if not holded_item.in_hand:
-                    holded_item = None
-            if not keyboard.a:
-                if hotbaritems:
-                    if holded_item is not None:
-                        holded_item.draw()
+
+            if dave.in_hand is not None:
+                if isinstance(dave.in_hand, Shield):
+                    if keyboard.w or keyboard.d:
+                        dave.in_hand.draw()
+                elif isinstance(dave.in_hand, Spear):
+                    if keyboard.w or keyboard.a or keyboard.s:
+                        dave.in_hand.draw()
+
+
             if not dave.dead:
                 if dave.goingleft == True:
                     screen.blit(flip(dave._surf, True, False), dave.topleft)
-                    if keyboard.a:
-                        if hotbaritems:
-                            if holded_item is not None:
-                                holded_item.draw()
                 else:
                     dave.draw()
+
+            if dave.in_hand is not None:
+                if not keyboard.a and not keyboard.d and not keyboard.w and not keyboard.d:
+                    dave.in_hand.draw()
+                if isinstance(dave.in_hand, Shield):
+                    if keyboard.a or keyboard.s:
+                        dave.in_hand.draw()
+                elif isinstance(dave.in_hand, Spear):
+                    if keyboard.d:
+                        dave.in_hand.draw()
             if workers != []:
                 for worker in workers:
                     worker.draw()
@@ -1234,23 +1268,7 @@ class Gamestate(StateMachine):
             for item in loot:
                 item.draw()
 
-            for build in envbuildings:
-                build.draw()
-                if build.building:
-                    screen.draw.circle((dave.pos), dave.buildingradius, (0, 50 ,200))
-                if build.type == 'tower':
-                    for thrown in build.towerthrown:
-                        thrown.draw()
-                if not build.canplace:
-                    actor_x.draw()
-                if build.active:
-                    if 0 < build.hp < build.maxhp:
-                        if build.maxhp > 50:
-                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.maxhp / 2, 5)), (200, 0, 0))
-                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.hp / 2, 5)), (0, 200, 0))
-                        else:
-                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.maxhp, 5)), (200, 0, 0))
-                            screen.draw.filled_rect(Rect((build.x - build.width / 4, build.y - 30), (build.hp, 5)), (0, 200, 0))
+
             for thrown in dave.active_throwns:
                 thrown.draw()
             for grass in grasses:
