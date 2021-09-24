@@ -158,7 +158,9 @@ class Shield(Spear):
     def Block(self):
         for bug in enemies:
             if self.colliderect(bug):
-                bug.knocked = True
+                if not bug.knocked:
+                    bug.hp -= 1
+                    bug.knocked = True
                 self.durability -= 1
 
     def cleanup(self):
