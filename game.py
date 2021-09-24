@@ -525,7 +525,22 @@ class Dave(Actor):
         self.protected = False
         self.in_hand = None
     def update(self):
-
+        if keyboard.K_1:
+            hotbars[-1].pos = hotbars[0].pos
+        if keyboard.K_2:
+            hotbars[-1].pos = hotbars[1].pos
+        if keyboard.K_3:
+            hotbars[-1].pos = hotbars[2].pos
+        if keyboard.K_4:
+            hotbars[-1].pos = hotbars[3].pos
+        if keyboard.K_5:
+            hotbars[-1].pos = hotbars[4].pos
+        if keyboard.K_6:
+            hotbars[-1].pos = hotbars[5].pos
+        if keyboard.K_7:
+            hotbars[-1].pos = hotbars[6].pos
+        if keyboard.K_8:
+            hotbars[-1].pos = hotbars[7].pos
         ##godmode
         if keyboard.g:
             self.wood = 50
@@ -683,9 +698,11 @@ class Dave(Actor):
             if isinstance(hotbar, Hotbar):
                 if hotbar.occupied:
                     self.hotbarusage += 1
-                    if self.hotbarusage >= 6:
+                    if self.hotbarusage >= 8:
                         dave.encumbered = True
-                        print('encumbered')
+                    else:
+                        dave.encumbered = False
+
     def idle_animate(self):
         global framecounter
         if framecounter % 10 == 0:
@@ -1150,7 +1167,6 @@ class Gamestate(StateMachine):
                 item.update()
                 if item.icon.pos == hotbars[-1].pos:
                     dave.in_hand = item
-                    print('daveinhand')
 
             for hotbar in hotbars:
                 if isinstance(hotbar, Hotbar):
@@ -1363,27 +1379,23 @@ class Gamestate(StateMachine):
                 screen.draw.text('Aim behind target', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black', fontsize = 20)
                 screen.draw.text('right-click to throw', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black', fontsize = 18)
                 screen.draw.text('low durability', (descbar.x, descbar.top + 58), anchor=(0.5, 0.5), color='black', fontsize = 18)
-                screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black',
-                                 fontsize=20)
-                screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)),
-                            (descbar.x - 50, descbar.top + 75))
-                screen.draw.text(' x2', (descbar.x - 40, descbar.top + 110), anchor=(0.5, 0.5), color='black',
-                                 fontsize=24)
-                screen.blit(pygame.transform.scale(pygame.image.load('images/stones.png'), (25, 25)),
-                            (descbar.x - 15, descbar.top + 75))
-                screen.draw.text(' x1', (descbar.x - 5, descbar.top + 110), anchor=(0.5, 0.5), color='black',
-                                 fontsize=24)
-                screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),
-                            (descbar.x + 20, descbar.top + 75))
-                screen.draw.text(' x2', (descbar.x + 30, descbar.top + 110), anchor=(0.5, 0.5), color='black',
-                                 fontsize=24)
+                screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black',fontsize=20)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)),(descbar.x - 50, descbar.top + 75))
+                screen.draw.text(' x2', (descbar.x - 40, descbar.top + 110), anchor=(0.5, 0.5), color='black',fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/stones.png'), (25, 25)),(descbar.x - 15, descbar.top + 75))
+                screen.draw.text(' x1', (descbar.x - 5, descbar.top + 110), anchor=(0.5, 0.5), color='black',fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),(descbar.x + 20, descbar.top + 75))
+                screen.draw.text(' x2', (descbar.x + 30, descbar.top + 110), anchor=(0.5, 0.5), color='black',fontsize=24)
+                if dave.encumbered:
+                    screen.draw.text('HOTBARS FULL', (descbar.x, descbar.bottom + 10), anchor=(0.5, 0.5), color='white', fontsize = 25)
             if self.icon_hover(4):
                 screen.draw.text('Shield', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
                 screen.draw.text('Knock foes', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black', fontsize = 20)
                 screen.draw.text('in right-click', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black', fontsize = 18)
                 screen.draw.text('direction', (descbar.x, descbar.top + 58), anchor=(0.5, 0.5), color='black', fontsize = 18)
-                screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black',
-                                 fontsize=20)
+                screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black',fontsize=20)
+                if dave.encumbered:
+                    screen.draw.text('HOTBARS FULL', (descbar.x, descbar.bottom + 10), anchor=(0.5, 0.5), color='white', fontsize = 25)
                 screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)),
                             (descbar.x - 45, descbar.top + 80))
                 screen.draw.text(' x4', (descbar.x - 10, descbar.top + 95), anchor=(0.5, 0.5), color='black',
