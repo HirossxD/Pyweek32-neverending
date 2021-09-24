@@ -39,14 +39,9 @@ class Hotbar(Actor):
         super().__init__('hotbar')
         self.occupied = False
     def update(self):
-        print(int(hotbars[0].x))
-        if hotbaritems:
-            print(f'item{int(hotbaritems[0].icon.x)}')
-
-        #if int(self.x) == int(Spear().icon.x):
         if Spear().icon.pos == self.pos:
             self.occupied = True
-            print('MATCH')
+
 
 class Spear(Actor):
     def __init__(self):
@@ -493,6 +488,10 @@ class Dave(Actor):
         if self.bottom >= HEIGHT:
                 self.bottom = HEIGHT
 
+        if self.hp < self.maxhp:
+            if framecounter %1000 == 0 :
+                self.hp += 1
+
         if self.colliderect(Stone()):
             if int(self.right) in range(int(Stone().left) - 5, int(Stone().left) + 5):
                 if not self.y > Stone().bottom:
@@ -639,6 +638,9 @@ class Tent(Actor):
         super().__init__('tent')
         self.x = (WIDTH - offset) / 2
         self.y = HEIGHT / 2
+        self.maxhp = 30
+        self.hp = 30
+
 
 class Bug(Actor):
     def __init__(self):
@@ -653,6 +655,7 @@ class Bug(Actor):
         self.hp = 1
         self.dead = False
         self.speed = 0.5
+        self.damage = 0.1
     def die(self):
         if not self.dead:
             dave.xp += 1
@@ -685,6 +688,13 @@ class Bug(Actor):
                 self.image = f'bug_die{self.frame}'
             if self.frame > 15:
                 enemies.remove(self)
+        for tent in tents:
+            if self.colliderect(tent):
+                self.speed = 0
+                if framecounter % 50 == 0:
+                    tent.hp -= self.damage
+
+
 
 class Wolf(Bug):
     def __init__(self):
@@ -692,6 +702,7 @@ class Wolf(Bug):
         self.image = 'wolf_wd_1'
         self.hp = 5
         self.hit_time = None
+        self.damage = 2
     def update(self):
 
         if framecounter %5 == 0:
@@ -711,15 +722,21 @@ class Wolf(Bug):
                 self.y -= self.speed
         if self.hp <= 0:
             self.die()
-        for worker in workers:
-            if self.colliderect(worker):
-                pass
+        # for worker in workers:
+        #     if self.colliderect(worker):
+        #         pass
         if self.dead:
             if self.frame < 6:
                 self.image = f'bug_die{self.frame}'
             if self.frame > 15:
                 dave.leather += 1
                 enemies.remove(self)
+        for tent in tents:
+            if self.colliderect(tent):
+                self.speed = 0
+                if framecounter % 50 == 0:
+                    tent.hp -= self.damage
+
 
         if self.colliderect(dave):
             if self.hit_time is None:
@@ -734,10 +751,10 @@ class Gamestate(StateMachine):
     init = State('init', initial= True)
     menu = State('Menu')
     game = State('Game')
-
+    game_over = State('Lost')
     start = init.to(menu)
     play = menu.to(game)
-
+    lose = game.to(game_over)
     def Buildingcollision(self, cls):
         if envbuildings != []:
             for building in envbuildings:
@@ -962,13 +979,9 @@ class Gamestate(StateMachine):
             for item in hotbaritems:
                 item.update()
 
-
             for hotbar in hotbars:
                 if isinstance(hotbar, Hotbar):
                     hotbar.update()
-
-
-
 
             for building in envbuildings:
                 if building.building:
@@ -989,8 +1002,14 @@ class Gamestate(StateMachine):
             if len(grasses) < 2:
                 if framecounter %880 == 0:
                     grasses.append(Grass())
+<<<<<<< HEAD
 
 
+=======
+            for idx, icon in enumerate(icons):
+                if self.icon_hover(idx):
+                    descbar.topright = mousepos
+>>>>>>> 8a1bf1d (game over created)
 
     def draw(self):
         if self.is_menu:
@@ -1006,7 +1025,6 @@ class Gamestate(StateMachine):
                 screen.draw.text('EXIT', (WIDTH / 2 - 110 + 80, HEIGHT / 3 + 225), fontsize=30)
         if self.is_game:
             screen.clear()
-            screen.fill('white')
             background.draw()
             for bug in enemies:
                 bug.draw()
@@ -1016,7 +1034,15 @@ class Gamestate(StateMachine):
 
             stone.draw()
             for tent in tents:
+                if tent.hp < tent.maxhp:
+                    screen.draw.filled_rect(Rect((tent.left + tent.width / 2, tent.top - 10), (tent.maxhp, 5)), (200, 0, 0))
+                    screen.draw.filled_rect(Rect((tent.left + tent.width / 2, tent.top - 10), (tent.hp, 5)), (0, 200, 0))
+                    if tent.hp < 1:
+                        tents.remove(tent)
+                        break
                 tent.draw()
+            if len(tents) < 1:
+                print('LOSED')
             if not keyboard.a:
                 for item in hotbaritems:
                     item.draw()
