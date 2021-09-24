@@ -712,7 +712,8 @@ class Wolf(Bug):
     def __init__(self):
         super().__init__()
         self.image = 'wolf_wd_1'
-        self.hp = 5
+        self.maxhp = 5
+        self.hp = self.maxhp
         self.hit_time = None
         self.damage = 3
     def update(self):
@@ -1039,6 +1040,12 @@ class Gamestate(StateMachine):
             background.draw()
             for bug in enemies:
                 bug.draw()
+                if isinstance(bug,Wolf):
+                    if bug.hp < bug.maxhp:
+                        screen.draw.filled_rect(
+                            Rect((bug.left, bug.top - 8), (bug.maxhp * 3, 5)), (200, 0, 0))
+                        screen.draw.filled_rect(
+                            Rect((bug.left, bug.top - 8), (bug.hp * 3, 5)), (0, 200, 0))
             tree.draw()
             for grass in grasses:
                 grass.draw()
@@ -1132,6 +1139,7 @@ class Gamestate(StateMachine):
                     Rect((dave.left, dave.top - 8), (dave.maxhp, 5)), (200, 0, 0))
                 screen.draw.filled_rect(
                     Rect((dave.left, dave.top - 8), (dave.hp, 5)),(0, 200, 0))
+
             for hotbar in hotbars:
                 hotbar.draw()
             for item in hotbaritems:
