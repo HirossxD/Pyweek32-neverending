@@ -362,7 +362,7 @@ class Smalltower(Actor):
             if len(envbuildings) > 8:
                 if self.colliderect(envbuildings[7]):
                     self.canplace = False
-                    
+
 
 class Grass(Actor):
     def __init__(self):
@@ -389,7 +389,9 @@ class Grass(Actor):
                     worker.dx = choice([-1, 1])
                     worker.dy = choice([-1, 1])
                     dave.grass += randint(1, 2)
-                    grasses.remove(self)
+                    if not dave.colliderect(self):
+                        grasses.remove(self)
+                    break
 class Stone(Actor):
     def __init__(self):
         super().__init__('stone')
@@ -858,6 +860,8 @@ class Wolf(Bug):
         super().__init__()
         self.image = 'wolf_wd_1'
         self.maxhp = 5
+        if envbuildings:
+            self.maxhp += len(envbuildings)
         self.hp = self.maxhp
         self.hit_time = None
         self.damage = 3
@@ -1203,7 +1207,7 @@ class Gamestate(StateMachine):
 
             if pygame.time.get_ticks() / 1000 > dave.wolftimer:
                     enemies.append(Wolf())
-                    dave.wolftimer += 30 - (len(envbuildings) * 2)
+                    dave.wolftimer += 30 - (len(envbuildings) * 2.2)
 
             if pygame.time.get_ticks() / 1000 < 60:
                 if framecounter %1000 == 0:
