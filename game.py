@@ -472,6 +472,8 @@ class Dave(Actor):
         self.grass = 0 #+ 50
         self.xp = 0 #+ 50
         self.lvl = 0
+        self.maxhp = 30
+        self.hp = self.maxhp
         self.buildingradius = 150
         self.spears = 0
         self.active_throwns = []
@@ -694,6 +696,7 @@ class Wolf(Bug):
         super().__init__()
         self.image = 'wolf_wd_1'
         self.hp = 5
+        self.hit_time = None
     def update(self):
 
         if framecounter %5 == 0:
@@ -723,7 +726,14 @@ class Wolf(Bug):
                 dave.leather += 1
                 enemies.remove(self)
 
-
+        if self.colliderect(dave):
+            if self.hit_time is None:
+                self.hit_time = pygame.time.get_ticks() / 1000
+                dave.hp -= 1
+            else:
+                if self.hit_time + 1 < pygame.time.get_ticks() / 1000:
+                    dave.hp -= 1
+                    self.hit_time = pygame.time.get_ticks() / 1000
 class Gamestate(StateMachine):
     mouse_holded = False
     init = State('init', initial= True)
@@ -994,10 +1004,10 @@ class Gamestate(StateMachine):
                 screen.draw.filled_rect(optionbar, (100, 200, 100))
             for selectbar in selectbars:
                 screen.draw.filled_rect(selectbar, (150, 250, 50))
-            screen.draw.text('PLAY GAME', (WIDTH / 2 - 110 + 50, HEIGHT / 3 + 15), fontsize = 30)
-            screen.draw.text('HELP', (WIDTH / 2 - 110 + 80, HEIGHT / 3 + 85), fontsize=30)
-            screen.draw.text('OPTIONS', (WIDTH / 2 - 110 + 60, HEIGHT / 3 + 155), fontsize=30)
-            screen.draw.text('EXIT', (WIDTH / 2 - 110 + 80, HEIGHT / 3 + 225), fontsize=30)
+                screen.draw.text('PLAY GAME', (WIDTH / 2 - 110 + 50, HEIGHT / 3 + 15), fontsize = 30)
+                screen.draw.text('HELP', (WIDTH / 2 - 110 + 80, HEIGHT / 3 + 85), fontsize=30)
+                screen.draw.text('OPTIONS', (WIDTH / 2 - 110 + 60, HEIGHT / 3 + 155), fontsize=30)
+                screen.draw.text('EXIT', (WIDTH / 2 - 110 + 80, HEIGHT / 3 + 225), fontsize=30)
         if self.is_game:
             screen.clear()
             screen.fill('white')
@@ -1064,6 +1074,11 @@ class Gamestate(StateMachine):
                 if grass.colliderect(dave):
                     screen.draw.filled_rect(Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.maxwork, 5)), (200, 200, 0))
                     screen.draw.filled_rect(Rect((grass.x - grass.width / 3, grass.y + grass.height / 2), (grass.working_status, 5)), (0, 0, 200))
+            if dave.hp < dave.maxhp:
+                screen.draw.filled_rect(
+                    Rect((dave.left, dave.top - 8), (dave.maxhp, 5)), (200, 0, 0))
+                screen.draw.filled_rect(
+                    Rect((dave.left, dave.top - 8), (dave.hp, 5)),(0, 200, 0))
             for hotbar in hotbars:
                 hotbar.draw()
             for item in hotbaritems:
