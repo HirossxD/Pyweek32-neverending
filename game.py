@@ -105,19 +105,19 @@ class Spear(Actor):
 
         if self.in_hand:
             if dave.idle:
-                self.pos = (dave.x + 15, dave.y + 10 + dave.frame)
+                self.pos = (dave.x + 14, dave.y + 10 + dave.frame - 4)
                 self.angle = 180
             if keyboard.s:
                 self.pos = (dave.x + 15, dave.y + 10 + dave.frame)
                 self.angle = 180
             if keyboard.w:
-                self.pos = (dave.x + 15, dave.y + 10 + dave.frame)
+                self.pos = (dave.x + 15, dave.y + 10 + dave.frame * 2)
                 self.angle = 0
             if keyboard.a:
-                self.pos = (dave.x + 10, dave.y + 10 + dave.frame)
+                self.pos = (dave.x - dave.frame, dave.y + 10 )
                 self.angle = 90
             if keyboard.d:
-                self.pos = (dave.x + 15, dave.y + 10 + dave.frame)
+                self.pos = (dave.x +  dave.frame, dave.y + 10 )
                 self.angle = -90
         if not self.in_hand:
             if not self.throwed:
@@ -446,7 +446,7 @@ class Barricade(Actor):
 
 class Dave(Actor):
     def __init__(self):
-        super().__init__('dave_wd_1')
+        super().__init__('wildman_wd_1')
         self.hotbar = 0
         self.framecounter = 0
         self.frame = 1
@@ -476,6 +476,15 @@ class Dave(Actor):
         self.wolftimer = 30
         self.dead = False
     def update(self):
+
+        ##godmode
+        if keyboard.g:
+            self.wood = 50
+            self.stone = 50
+            self.grass = 50
+            self.hp = self.maxhp
+            for tent in tents:
+                tent.hp = tent.maxhp
         #print(pygame.time.get_ticks() / 1000)
         #print(len(self.active_throwns))
         if self.framecounter >= 100:
@@ -504,6 +513,18 @@ class Dave(Actor):
                 self.bottom = Stone().y - 5
             if int(self.top) in range(int(Stone().y) - 5, int(Stone().y) + 5):
                 self.top = Stone().y + 5
+        for tent in tents:
+            if self.colliderect(tent):
+                if int(self.right) in range(int(tent.left) - 5, int(tent.left) + 5):
+                    if not self.y > tent.bottom:
+                        self.right = tent.left
+                if int(self.left) in range(int(tent.right) - 5, int(tent.right) + 5):
+                    if not self.y > tent.bottom:
+                        self.left = tent.right
+                if int(self.bottom) in range(int(tent.y) - 5, int(tent.y) + 5):
+                    self.bottom = tent.y - 5
+                if int(self.top) in range(int(tent.y) - 5, int(tent.y) + 5):
+                    self.top = tent.y + 5
                     #self.bottom = HEIGHT
 
         # for event in pygame.event.get():
@@ -613,26 +634,26 @@ class Dave(Actor):
         global framecounter
         if framecounter % 10 == 0:
             self.frame += 1
-        if self.frame > 3:
+        if self.frame > 8:
             self.frame = 1
-        self.image = f'dave_idle_{self.frame}'
+        self.image = f'wildman_idle_{self.frame}'
 
 
     def move_down_animate(self):
         self.framecounter += 1
         if self.framecounter % 5 == 0:
             self.frame += 1
-        if self.frame > 5:
+        if self.frame > 4:
             self.frame = 1
-        self.image = f'dave_wd_{self.frame}'
+        self.image = f'wildman_wd_{self.frame}'
 
     def move_up_animate(self):
         self.framecounter += 1
         if self.framecounter % 5 == 0:
             self.frame += 1
-        if self.frame > 5:
+        if self.frame > 4:
             self.frame = 1
-        self.image = f'dave_wu_{self.frame}'
+        self.image = f'wildman_wu_{self.frame}'
         if self.framecounter >= 100:
             self.framecounter = 0
 
@@ -640,9 +661,9 @@ class Dave(Actor):
         self.framecounter += 1
         if self.framecounter % 5 == 0:
             self.frame += 1
-        if self.frame > 6:
+        if self.frame > 8:
             self.frame = 1
-        self.image = f'dave_ws_{self.frame}'
+        self.image = f'wildman_ws_{self.frame}'
 
 
 class Tent(Actor):
@@ -1278,14 +1299,14 @@ def on_mouse_down(pos, button):
     #print("Mouse button", button, "clicked at", pos)
     if gmstate.is_game:
         if button == mouse.WHEEL_UP:
-                    dave.hotbar += 1
-                    if dave.hotbar > 7:
-                        dave.hotbar = 7
-                    hotbars[-1].pos = hotbars[dave.hotbar].pos
-        elif button == mouse.WHEEL_DOWN:
                     dave.hotbar -= 1
                     if dave.hotbar < 0:
                         dave.hotbar = 0
+                    hotbars[-1].pos = hotbars[dave.hotbar].pos
+        elif button == mouse.WHEEL_DOWN:
+                    dave.hotbar += 1
+                    if dave.hotbar > 7:
+                        dave.hotbar = 7
                     hotbars[-1].pos = hotbars[dave.hotbar].pos
 
         if button == mouse.RIGHT:
