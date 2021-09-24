@@ -505,6 +505,7 @@ class Dave(Actor):
             if int(self.top) in range(int(Stone().y) - 5, int(Stone().y) + 5):
                 self.top = Stone().y + 5
                     #self.bottom = HEIGHT
+
         # for event in pygame.event.get():
         #     if event.type == pygame.MOUSEWHEEL:
         #         print(event.x,event.y)
@@ -933,21 +934,24 @@ class Gamestate(StateMachine):
 
             for worker in workers:
                 worker.update()
-
+            for grass in grasses:
+                grass.update()
             for item in loot:
                 item.update()
 
             framecounter += 1
             if framecounter > 1000:
                 framecounter = 0
+
             if pygame.time.get_ticks() / 1000 > dave.wolftimer:
                     enemies.append(Wolf())
-                    dave.wolftimer += 30
+                    dave.wolftimer += 30 - (len(envbuildings) * 2)
 
+            if pygame.time.get_ticks() / 1000 < 60:
+                if framecounter %1000 == 0:
+                    enemies.append(Bug())
 
-            if framecounter %660 == 0:
-                enemies.append(Bug())
-
+            if framecounter % 1000 == 0:
                 if len(loot) < 10:
                     loot.append(Branch())
                     loot.append(Rock())
@@ -978,11 +982,10 @@ class Gamestate(StateMachine):
                         building.canplace = False
 
                 building.update()
-            if dave.active_throwns != 0:
+            if dave.active_throwns:
                 for thrown in dave.active_throwns:
                     thrown.update()
-            for grass in grasses:
-                grass.update()
+
             if len(grasses) < 2:
                 if framecounter %880 == 0:
                     grasses.append(Grass())
@@ -1039,7 +1042,7 @@ class Gamestate(StateMachine):
                 if inactiveicons[idx].pos == icon.pos:
                     inactiveicons[idx].draw()
 
-LALA
+
             for item in loot:
                 item.draw()
 
