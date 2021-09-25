@@ -974,11 +974,12 @@ class Gamestate(StateMachine):
     game = State('Game')
     help = State('Help')
     game_over = State('Lost')
-    get_help = menu.to(help)
+    gethelp = menu.to(help)
     start = init.to(menu)
     play = menu.to(game)
     lose = game.to(game_over)
     helpback = help.to(menu)
+    gameoverback = game_over.to(menu)
     # def Buildingcollision(self, cls):
     #     if envbuildings:
     #         for bld in envbuildings:
@@ -998,10 +999,7 @@ class Gamestate(StateMachine):
             else:
                 return False
 
-    def on_play(self):
-        print('starting game')
-        pygame.mouse.set_cursor(pygame.cursors.broken_x)
-        dave.throwed_time = pygame.time.get_ticks() / 60
+
 
     def on_start(self):
         print('initmenu')
@@ -1010,6 +1008,29 @@ class Gamestate(StateMachine):
             selectbars.append(Rect((WIDTH / 2 - 110 + (200 * i), HEIGHT / 3), (20, 50)))
         for i in range(0, 3):
             optionbars.append(Rect((WIDTH / 2 - 100, HEIGHT / 3 + (70 * i)), (200, 50)))
+    def on_play(self):
+        print('starting game')
+        pygame.mouse.set_cursor(pygame.cursors.broken_x)
+        dave.throwed_time = pygame.time.get_ticks() / 60
+    def on_lose(self):
+        buttonback.x = WIDTH / 2 - buttonback.width / 2
+        buttonback.y = HEIGHT / 2
+        selectbars[0].top = buttonback.top
+        selectbars[0].x = buttonback.left
+        selectbars[1].top = buttonback.top
+        selectbars[1].x = buttonback.right
+    def on_gameoverback(self):
+        for i in range(0, 2):
+            selectbars[i].x = WIDTH / 2 - 110 + (200 * i)
+            selectbars[i].y = HEIGHT / 3
+    def on_gethelp(self):
+        buttonback.x = WIDTH / 2 - 160
+        buttonback.y = HEIGHT - 100
+        selectbars[0].top = buttonback.top
+        selectbars[0].x = buttonback.left
+        selectbars[1].top = buttonback.top
+        selectbars[1].x = buttonback.right
+
     def on_helpback(self):
         for i in range(0, 2):
             selectbars[i].x = WIDTH / 2 - 110 + (200 * i)
@@ -1043,20 +1064,23 @@ class Gamestate(StateMachine):
                     if selectbars[0].y == optionbars[0].y:
                         self.play()
                     if selectbars[0].y == optionbars[1].y:
-                        self.get_help()
+                        self.gethelp()
                     if selectbars[0].y == optionbars[2].y:
                         exit()
                     keypressed = True
             else:
                 keypressed = False
         if self.is_help:
-            selectbars[0].top = buttonback.top
-            selectbars[0].x = buttonback.left
-            selectbars[1].top = buttonback.top
-            selectbars[1].x = buttonback.right
             if keyboard.space:
                 if not keypressed:
                     gmstate.helpback()
+                    keypressed = True
+            else:
+                keypressed = False
+        if self.is_game_over:
+            if keyboard.space:
+                if not keypressed:
+                    gmstate.gameoverback()
                     keypressed = True
             else:
                 keypressed = False
@@ -1523,8 +1547,12 @@ class Gamestate(StateMachine):
 
         if self.is_game_over:
             screen.clear()
-            screen.draw.text(f'GAME OVER', (WIDTH / 2, HEIGHT /2 + 80), anchor=(0.5, 0.5), color='white', fontsize = 50)
-            screen.draw.text(f'Score: {dave.xp}', (WIDTH / 2, HEIGHT /2 + 150), anchor=(0.5, 0.5), color='white')
+            screen.draw.text(f'GAME OVER', (WIDTH / 2, HEIGHT /2 - 120), anchor=(0.5, 0.5), color='white', fontsize = 50)
+            screen.draw.text(f'Score: {dave.xp}', (WIDTH / 2, HEIGHT /2 - 80), anchor=(0.5, 0.5), color='white')
+            screen.draw.filled_rect(buttonback, (100, 200, 100))
+            screen.draw.text('BACK', (buttonback.x + buttonback.width / 2, buttonback.y + buttonback.height / 2), anchor=(0.5, 0.5),fontsize=30)
+            screen.draw.filled_rect(selectbars[0], (150, 250, 50))
+            screen.draw.filled_rect(selectbars[1], (150, 250, 50))
 
 
 gmstate = Gamestate()
@@ -1578,6 +1606,11 @@ for icon in icons:
 
 def on_mouse_down(pos, button):
     #print("Mouse button", button, "clicked at", pos)
+    if gmstate.is_game_over:
+        if button == mouse.LEFT:
+            if buttonback.left < pos[0] < buttonback.right:
+                if buttonback.top < pos[1] < buttonback.bottom:
+                    gmstate.gameoverback()
     if gmstate.is_help:
         if button == mouse.LEFT:
             if buttonback.left < pos[0] < buttonback.right:
@@ -1590,7 +1623,7 @@ def on_mouse_down(pos, button):
                     gmstate.play()
             if optionbars[1].left < pos[0] < optionbars[1].right:
                 if optionbars[1].top < pos[1] < optionbars[1].bottom:
-                    gmstate.get_help()
+                    gmstate.gethelp()
     if gmstate.is_game:
         if button == mouse.WHEEL_UP:
                     dave.hotbar -= 1
