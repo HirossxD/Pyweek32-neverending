@@ -204,18 +204,20 @@ class Icon(Actor):
     def __init__(self):
         if len(icons) < 1:
             super().__init__('plus')
-        if len(icons) == 1:
+        elif len(icons) == 1:
             super().__init__('barricade_icon')
-        if len(icons) == 2:
+        elif len(icons) == 2:
             super().__init__('tower_icon')
-        if len(icons) == 3:
+        elif len(icons) == 3:
             super().__init__('spear_icon')
-        if len(icons) == 4:
+        elif len(icons) == 4:
             super().__init__('shield_icon')
-        if len(icons) > 4:
+        elif len(icons) == 5:
+            super().__init__('tentrepair_icon')
+        else:
             super().__init__('plus')
 
-        self.active = True
+        self.active = False
 
 
 class Worker(Actor):
@@ -299,7 +301,7 @@ class Smalltower(Actor):
         super().__init__('tower')
         self.type = 'tower'
         self.maxhp = 10
-        self.hp = self.maxhp
+        self.hp = self.maxhp + 1
         self.active = False
         self.building = True
         self.harmingentities = []
@@ -324,6 +326,9 @@ class Smalltower(Actor):
         else:
             self.active = True
         if self.active:
+            if self.hp == self.maxhp + 1:
+                sounds.build.play()
+                self.hp = self.maxhp
             for foe in enemies:
                 x1, y1 = self.pos
                 x2, y2 = foe.pos
@@ -491,7 +496,7 @@ class Barricade(Actor):
     def __init__(self):
         super().__init__('barricade_rotated')
         self.maxhp = 20
-        self.hp = self.maxhp
+        self.hp = self.maxhp + 1
         self.active = False
         self.building = True
         self.harmingentities = []
@@ -530,6 +535,9 @@ class Barricade(Actor):
             self.active = True
 
         if self.active:
+            if self.hp == self.maxhp + 1:
+                sounds.build.play()
+                self.hp = self.maxhp
             for bug in enemies:
                 if self.colliderect(bug):
                     if self.active:
@@ -632,6 +640,7 @@ class Dave(Actor):
                 tents[-1].hp -= 1
         if keyboard.g:
             self.wood = 50
+            self.leather = 50
             self.stone = 50
             self.grass = 50
             self.hp = self.maxhp
@@ -749,9 +758,10 @@ class Dave(Actor):
             dave.xp += 1
 
         if dave.xp == 75:
-            workers.append(Worker())
-            workers[-1].pos = tents[-1].pos
-            dave.xp += 1
+            if len(tents) > 1:
+                workers.append(Worker())
+                workers[-1].pos = tents[-1].pos
+                dave.xp += 1
         if not self.dead:
             if self.hp <= 0:
                 self.dead = True
@@ -899,6 +909,9 @@ class Bug(Actor):
             if self.colliderect(worker):
                 self.die()
         if self.dead:
+            if self.frame == 2:
+                sounds.splat.play()
+                self.frame += 1
             if self.frame < 6:
                 self.image = f'bug_die{self.frame}'
             if self.frame > 15:
@@ -974,9 +987,14 @@ class Wolf(Bug):
         #     if self.colliderect(worker):
         #         pass
         if self.dead:
+
             if self.frame < 7:
                 self.image = f'wolf_dead_{self.frame}'
+            if self.frame == 1:
+                sounds.wolfdie.play()
+                self.frame += 1
             if self.frame > 15:
+
                 dave.leather += 1
                 enemies.remove(self)
 
@@ -1086,6 +1104,7 @@ class Gamestate(StateMachine):
                 return False
 
     def on_start(self):
+        music.play('menusoundtrack')
         print('initmenu')
         self.mouseholded = False
         self.mouse_holded = False
@@ -1096,6 +1115,8 @@ class Gamestate(StateMachine):
             optionbars.append(Rect((WIDTH / 2 - 100, HEIGHT / 3 + (70 * d)), (200, 50)))
 
     def on_play(self):
+        music.stop()
+        music.play(choice(['gamesoundtrack1','gamesoundtrack2','gamesoundtrack3']))
         self.mouse_holded = False
         print('starting game')
         self.gamestart_time = pygame.time.get_ticks() / 1000
@@ -1128,6 +1149,8 @@ class Gamestate(StateMachine):
         selectbars[1].x = buttonback.right
 
     def on_gameoverback(self):
+        music.stop()
+        music.play('menusoundtrack')
         self.mouse_holded = False
         for z in range(0, 2):
             selectbars[z].x = WIDTH / 2 - 110 + (200 * z)
@@ -1206,24 +1229,26 @@ class Gamestate(StateMachine):
                 if not self.mouse_holded:
                     if self.icon_hover(0):
                         if icons[0].active:
-                            if dave.xp >= 50:
-                                if len(tents) < 2:
-                                    for tent in tents:
-                                        tent.x -= 30 * len(tents)
-                                    tents.append(Tent())
-                                    workers.append(Worker())
-                                    tents[-1].x += 30 * len(tents)
-                                    workers[-1].pos = tents[-1].pos
-                                    self.mouse_holded = True
-                                if dave.xp >= 100:
-                                    if len(tents) < 3:
-                                        for tent in tents:
-                                            tent.x -= 30 * len(tents)
-                                        tents.append(Tent())
-                                        workers.append(Worker())
-                                        tents[-1].x += 30 * len(tents)
-                                        workers[-1].pos = tents[-1].pos
-                                        self.mouse_holded = True
+                            if dave.leather >= 10:
+                                if dave.wood >= 4:
+                                    if dave.grass >= 8:
+                                        if len(tents) < 2:
+                                            for tent in tents:
+                                                tent.x -= 30 * len(tents)
+                                            tents.append(Tent())
+                                            tents[-1].x += 30 * len(tents)
+                                            dave.grass -= 8
+                                            dave.wood -= 4
+                                            dave.leather -= 10
+                                            self.mouse_holded = True
+                                        elif len(tents) < 3:
+                                            #hard set coordinants lulok optimize
+                                            for tent in tents:
+                                                tent.x -= 30 * len(tents)
+                                            tents.append(Tent())
+                                            tents[-1].x += 30 * len(tents)
+                                            workers[-1].pos = tents[-1].pos
+                                            self.mouse_holded = True
 
 
                     elif self.icon_hover(1):
@@ -1288,16 +1313,16 @@ class Gamestate(StateMachine):
             else:
                 self.mouse_holded = False
             # icon0 availability
-            if len(tents) < 2:
-                if dave.xp >= 50:
-                    icons[0].active = True
-                else:
-                    icons[0].active = False
-            elif len(tents) < 4:
-                if dave.xp >= 100:
-                    icons[0].active = True
-                else:
-                    icons[0].active = False
+            if dave.leather >= 10:
+                if dave.wood >= 4:
+                    if dave.grass >= 8:
+                        if len(tents) < 4:
+                            icons[0].active = True
+                        if len(tents) == 3:
+                            icons[0].active = False
+
+            else:
+                icons[0].active = False
 
             # icon1
             if dave.wood >= 8 and dave.grass >= 4:
@@ -1342,6 +1367,14 @@ class Gamestate(StateMachine):
                         print('You have full hotbar')
             else:
                 icons[4].active = False
+
+            if dave.leather >= 4:
+                if dave.grass >= 4:
+                    if len(tents) < 4:
+                        icons[5].active = True
+
+            else:
+                icons[5].active = False
 
             for idx, icon in enumerate(icons):
                 if self.icon_hover(idx):
@@ -1410,6 +1443,8 @@ class Gamestate(StateMachine):
                         # (726, 449)
                         else:
                             building.canplace = True
+                    else:
+                        building.canplace = False
 
                 building.update()
             if dave.active_throwns:
@@ -1588,20 +1623,24 @@ class Gamestate(StateMachine):
                 screen.draw.text('Tent', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
                 screen.draw.text('Build another tent. \n Expand your party.', (descbar.x, descbar.top + 36),
                                  anchor=(0.5, 0.5), color='black', fontsize=20)
-                screen.draw.text('requirements:', (descbar.x, descbar.top + 66), anchor=(0.5, 0.5), color='black',
+                screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black',
                                  fontsize=20)
-                if dave.xp < 50:
-                    screen.draw.text('50 XP', (descbar.x, descbar.top + 86), anchor=(0.5, 0.5), color='red',
-                                     fontsize=20)
-                elif dave.xp >= 50 and len(workers) < 2:
-                    screen.draw.text('50 XP', (descbar.x, descbar.top + 86), anchor=(0.5, 0.5), color='green',
-                                     fontsize=20)
-                elif dave.xp >= 50 and len(workers) >= 2:
-                    screen.draw.text('100 XP', (descbar.x, descbar.top + 86), anchor=(0.5, 0.5), color='red',
-                                     fontsize=20)
-                elif dave.xp > 100 and len(tents) < 3:
-                    screen.draw.text('100 XP', (descbar.x, descbar.top + 86), anchor=(0.5, 0.5), color='green',
-                                     fontsize=20)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/lumber.png'), (25, 25)),
+                            (descbar.x - 50, descbar.top + 75))
+                screen.draw.text(' x2', (descbar.x - 40, descbar.top + 110), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/leather.png'), (25, 25)),
+                            (descbar.x - 15, descbar.top + 75))
+                screen.draw.text(' x10', (descbar.x - 5, descbar.top + 110), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),
+                            (descbar.x + 20, descbar.top + 75))
+                screen.draw.text(' x8', (descbar.x + 30, descbar.top + 110), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
+                if len(tents) == 3:
+                    screen.draw.text('MAX TENTS COUNT', (descbar.x, descbar.bottom + 10), anchor=(0.5, 0.5), color='white',
+                                     fontsize=25)
+
 
             if self.icon_hover(1):
                 screen.draw.text('Barricade', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='white')
@@ -1689,6 +1728,23 @@ class Gamestate(StateMachine):
                             (descbar.x + 5, descbar.top + 80))
                 screen.draw.text(' x4', (descbar.x + 40, descbar.top + 95), anchor=(0.5, 0.5), color='black',
                                  fontsize=24)
+            if self.icon_hover(5):
+                screen.draw.text('Repair TENT', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
+                screen.draw.text('use near it', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black',
+                                 fontsize=20)
+                screen.draw.text('with right-click', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black',
+                                 fontsize=18)
+                screen.draw.text('requirements:', (descbar.x, descbar.top + 60), anchor=(0.5, 0.5), color='black',
+                                 fontsize=20)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/leather.png'), (25, 25)),
+                            (descbar.x - 45, descbar.top + 80))
+                screen.draw.text(' x4', (descbar.x - 10, descbar.top + 95), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
+                screen.blit(pygame.transform.scale(pygame.image.load('images/grassfiber.png'), (25, 25)),
+                            (descbar.x + 5, descbar.top + 80))
+                screen.draw.text(' x4', (descbar.x + 40, descbar.top + 95), anchor=(0.5, 0.5), color='black',
+                                 fontsize=24)
+
 
             # screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
             screen.blit('lumber', (WIDTH - 80, 10))
@@ -1756,6 +1812,10 @@ icons[-1].x = icons[0].x
 icons.append(Icon())
 icons[-1].top = icons[0].bottom + 126
 icons[-1].left = icons[len(icons) - 2].right + 8
+
+icons.append(Icon())
+icons[-1].top = icons[len(icons)-3].bottom + 10
+icons[-1].x = icons[len(icons) - 3].x
 
 inactiveicons = []
 for icon in icons:
