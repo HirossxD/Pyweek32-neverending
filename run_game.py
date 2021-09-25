@@ -229,7 +229,7 @@ class Worker(Actor):
         self.frame = 1
 
     def update(self):
-        if framecounter %8 == 0:
+        if framecounter % 8 == 0:
             self.frame += 1
             if self.frame > 3:
                 self.frame = 1
@@ -247,7 +247,7 @@ class Worker(Actor):
 
         self.x += self.dx
         self.y += self.dy
-        if framecounter %self.rand == 0:
+        if framecounter % self.rand == 0:
             self.dx = randint(-1, 1)
             self.dy = randint(-1, 1)
             self.rand = randint(50, 500)
@@ -635,24 +635,22 @@ class Dave(Actor):
         if keyboard.K_8:
             hotbars[-1].pos = hotbars[7].pos
         ##godmode
-        if keyboard.p:
-            if tents:
-                tents[-1].hp -= 1
-        if keyboard.g:
-            self.wood = 50
-            self.leather = 50
-            self.stone = 50
-            self.grass = 50
-            self.hp = self.maxhp
-            self.xp = 100
+            # if keyboard.p:
+            #     if tents:
+            #         tents[-1].hp -= 1
+            # if keyboard.g:
+            #     self.wood = 50
+            #     self.leather = 50
+            #     self.stone = 50
+            #     self.grass = 50
+            #     self.hp = self.maxhp
+            #     self.xp = 100
+            # if len(enemies) < 3:
+            #     enemies.append(Wolf())
+            #     workers.append(Worker())
+            # for tent in tents:
+            #     tent.hp = tent.maxhp
 
-            if len(enemies) < 3:
-                enemies.append(Wolf())
-                workers.append(Worker())
-            for tent in tents:
-                tent.hp = tent.maxhp
-        # print(pygame.time.get_ticks() / 1000)
-        # print(len(self.active_throwns))
         if self.framecounter >= 100:
             self.framecounter = 0
         if self.right >= WIDTH - offset:
@@ -994,10 +992,8 @@ class Wolf(Bug):
                 sounds.wolfdie.play()
                 self.frame += 1
             if self.frame > 15:
-
                 dave.leather += 1
                 enemies.remove(self)
-
 
         if self.knocked:
             x1, y1 = pygame.mouse.get_pos()
@@ -1069,6 +1065,7 @@ class Wolf(Bug):
             else:
                 self.speed = 0.5
 
+
 class Gamestate(StateMachine):
     mouse_holded = False
     gamestart_time = pygame.time.get_ticks() / 1000
@@ -1116,7 +1113,7 @@ class Gamestate(StateMachine):
 
     def on_play(self):
         music.stop()
-        music.play(choice(['gamesoundtrack1','gamesoundtrack2','gamesoundtrack3']))
+        music.play(choice(['gamesoundtrack1', 'gamesoundtrack2', 'gamesoundtrack3']))
         self.mouse_holded = False
         print('starting game')
         self.gamestart_time = pygame.time.get_ticks() / 1000
@@ -1242,7 +1239,7 @@ class Gamestate(StateMachine):
                                             dave.leather -= 10
                                             self.mouse_holded = True
                                         elif len(tents) < 3:
-                                            #hard set coordinants lulok optimize
+                                            # hard set coordinants lulok optimize
                                             for tent in tents:
                                                 tent.x -= 30 * len(tents)
                                             tents.append(Tent())
@@ -1310,6 +1307,22 @@ class Gamestate(StateMachine):
                                     self.mouse_holded = True
                                 else:
                                     screen.draw.text('You are Encumbered', (WIDTH / 2, 100), color='red')
+                    elif self.icon_hover(5):
+                        if dave.leather >= 4:
+                            if dave.grass >= 4:
+                                for tent in tents:
+                                    if dave.colliderect(tent):
+                                        if not tent.hp == tent.maxhp:
+                                            dave.wood -= 4
+                                            dave.grass -= 4
+                                            if tent.maxhp - tent.hp > 10:
+                                                tent.hp += 10
+                                            else:
+                                                tent.hp = tent.maxhp
+                                            sounds.tentrepair.play()
+                                            self.mouse_holded = True
+                                            break
+
             else:
                 self.mouse_holded = False
             # icon0 availability
@@ -1620,7 +1633,7 @@ class Gamestate(StateMachine):
                 if self.icon_hover(idx):
                     descbar.draw()
             if self.icon_hover(0):
-                screen.draw.text('Tent', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
+                screen.draw.text('Tent', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='white')
                 screen.draw.text('Build another tent. \n Expand your party.', (descbar.x, descbar.top + 36),
                                  anchor=(0.5, 0.5), color='black', fontsize=20)
                 screen.draw.text('requirements:', (descbar.x, descbar.top + 70), anchor=(0.5, 0.5), color='black',
@@ -1638,9 +1651,9 @@ class Gamestate(StateMachine):
                 screen.draw.text(' x8', (descbar.x + 30, descbar.top + 110), anchor=(0.5, 0.5), color='black',
                                  fontsize=24)
                 if len(tents) == 3:
-                    screen.draw.text('MAX TENTS COUNT', (descbar.x, descbar.bottom + 10), anchor=(0.5, 0.5), color='white',
+                    screen.draw.text('MAX TENTS COUNT', (descbar.x, descbar.bottom + 10), anchor=(0.5, 0.5),
+                                     color='white',
                                      fontsize=25)
-
 
             if self.icon_hover(1):
                 screen.draw.text('Barricade', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='white')
@@ -1660,7 +1673,7 @@ class Gamestate(StateMachine):
                                  fontsize=24)
                 # screen.blit('lumber', (descbar.x, descbar.top + 80))
             if self.icon_hover(2):
-                screen.draw.text('Tower', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
+                screen.draw.text('Tower', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='white')
                 screen.draw.text('shoots rocks', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black',
                                  fontsize=20)
                 screen.draw.text('can\'t have more \n', (descbar.x, descbar.top + 50), anchor=(0.5, 0.5), color='black',
@@ -1683,7 +1696,7 @@ class Gamestate(StateMachine):
                                  fontsize=24)
 
             if self.icon_hover(3):
-                screen.draw.text('Spear', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
+                screen.draw.text('Spear', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='white')
                 screen.draw.text('Aim behind target', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black',
                                  fontsize=20)
                 screen.draw.text('right-click to throw', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5),
@@ -1708,7 +1721,7 @@ class Gamestate(StateMachine):
                     screen.draw.text('HOTBARS FULL', (descbar.x, descbar.bottom + 10), anchor=(0.5, 0.5), color='white',
                                      fontsize=25)
             if self.icon_hover(4):
-                screen.draw.text('Shield', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
+                screen.draw.text('Shield', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='white')
                 screen.draw.text('Knock foes', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black',
                                  fontsize=20)
                 screen.draw.text('in right-click', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black',
@@ -1730,7 +1743,7 @@ class Gamestate(StateMachine):
                                  fontsize=24)
             if self.icon_hover(5):
                 screen.draw.text('Repair TENT', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
-                screen.draw.text('use near it', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black',
+                screen.draw.text('use near tent', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black',
                                  fontsize=20)
                 screen.draw.text('with right-click', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black',
                                  fontsize=18)
@@ -1744,7 +1757,6 @@ class Gamestate(StateMachine):
                             (descbar.x + 5, descbar.top + 80))
                 screen.draw.text(' x4', (descbar.x + 40, descbar.top + 95), anchor=(0.5, 0.5), color='black',
                                  fontsize=24)
-
 
             # screen.draw.filled_rect(Rect((WIDTH - 60, 10), (50, 200)), (200, 200, 0))
             screen.blit('lumber', (WIDTH - 80, 10))
@@ -1814,7 +1826,7 @@ icons[-1].top = icons[0].bottom + 126
 icons[-1].left = icons[len(icons) - 2].right + 8
 
 icons.append(Icon())
-icons[-1].top = icons[len(icons)-3].bottom + 10
+icons[-1].top = icons[len(icons) - 3].bottom + 10
 icons[-1].x = icons[len(icons) - 3].x
 
 inactiveicons = []
