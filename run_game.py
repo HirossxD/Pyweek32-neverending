@@ -233,14 +233,14 @@ class Worker(Actor):
                 self.frame = 1
             if self.dy > 0:
                 self.image = f'worker_wd_{self.frame}'
-            elif self.dy < 0:
+            if self.dy < 0:
                 self.image = f'worker_wu_{self.frame}'
-            elif self.dy == 0 and self.dx == 0:
+            if self.dy == 0 and self.dx == 0:
                 self.image = f'worker_idle_{self.frame}'
             if self.dy == 0:
                 if self.dx > 0:
                     self.image = f'worker_wr_{self.frame}'
-                if self.dx > 0:
+                if self.dx < 0:
                     self.image = f'worker_wl_{self.frame}'
 
         self.x += self.dx
