@@ -1067,6 +1067,7 @@ class Wolf(Bug):
 
 
 class Gamestate(StateMachine):
+    menuframe = 1
     mouse_holded = False
     gamestart_time = pygame.time.get_ticks() / 1000
     game_time = 0
@@ -1165,7 +1166,7 @@ class Gamestate(StateMachine):
     def on_helpback(self):
         self.mouse_holded = False
         for x in range(0, 2):
-            selectbars[x].x = WIDTH / 2 - 110 + (200 * i)
+            selectbars[x].x = WIDTH / 2 - 110 + (200 * x)
             selectbars[x].y = HEIGHT / 3
 
     def update(self):
@@ -1484,6 +1485,15 @@ class Gamestate(StateMachine):
             screen.draw.text('PLAY GAME', (WIDTH / 2 - 110 + 50, HEIGHT / 3 + 15), fontsize=30)
             screen.draw.text('HELP', (WIDTH / 2 - 110 + 80, HEIGHT / 3 + 85), fontsize=30)
             screen.draw.text('EXIT', (WIDTH / 2 - 110 + 80, HEIGHT / 3 + 155), fontsize=30)
+
+            # if framecounter %100 == 0:
+            #     self.menuframe += 1
+            #     if self.menuframe > 3:
+            #         self.menuframe = 1
+            screen.draw.text('WILD CAMPERS', (WIDTH / 2 , 100), anchor=(0.5,0.5) ,fontsize=160)
+            screen.blit(pygame.transform.scale(pygame.image.load(f'images/worker_idle_{self.menuframe}.png'), (60, 130)),(WIDTH / 4 , HEIGHT / 2))
+            screen.blit(pygame.transform.scale(pygame.image.load(f'images/wildman_idle_{self.menuframe}.png'), (60, 130)),(WIDTH / 2 + 200, HEIGHT / 2))
+
 
         if self.is_help:
             screen.clear()
