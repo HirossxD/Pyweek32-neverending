@@ -300,7 +300,7 @@ class Smalltower(Actor):
     def __init__(self):
         super().__init__('tower')
         self.type = 'tower'
-        self.maxhp = 10
+        self.maxhp = 20
         self.hp = self.maxhp + 1
         self.active = False
         self.building = True
@@ -635,21 +635,21 @@ class Dave(Actor):
         if keyboard.K_8:
             hotbars[-1].pos = hotbars[7].pos
         ##godmode
-            # if keyboard.p:
-            #     if tents:
-            #         tents[-1].hp -= 1
-            # if keyboard.g:
-            #     self.wood = 50
-            #     self.leather = 50
-            #     self.stone = 50
-            #     self.grass = 50
-            #     self.hp = self.maxhp
-            #     self.xp = 100
-            # if len(enemies) < 3:
-            #     enemies.append(Wolf())
-            #     workers.append(Worker())
-            # for tent in tents:
-            #     tent.hp = tent.maxhp
+        # if keyboard.p:
+        #     if tents:
+        #         tents[-1].hp -= 1
+        # if keyboard.g:
+        #     self.wood = 50
+        #     self.leather = 50
+        #     self.stone = 50
+        #     self.grass = 50
+        #     self.hp = self.maxhp
+        #     self.xp = 100
+        #     if len(enemies) < 3:
+        #         enemies.append(Wolf())
+        #         workers.append(Worker())
+        #     for tent in tents:
+        #         tent.hp = tent.maxhp
 
         if self.framecounter >= 100:
             self.framecounter = 0
@@ -767,7 +767,7 @@ class Dave(Actor):
         if self.dead:
             if tents:
                 self.pos = tents[0].pos
-                if framecounter & 50 == 0:
+                if framecounter %50 == 0:
                     self.hp += 1
                     if self.hp >= self.maxhp:
                         self.dead = False
@@ -858,7 +858,7 @@ class Tent(Actor):
                 if not foe.dead:
                     foe.speed = 0
                     if framecounter % 50 == 0:
-                        self.hp -= foe.damage
+                        self.hp -= foe.damage / 2
             else:
                 foe.speed = 0.5
 
@@ -1414,14 +1414,28 @@ class Gamestate(StateMachine):
                 dave.wolftimer += 30 - (len(envbuildings) * 2.2)
 
             if gmstate.game_time > dave.wolfgrouptimer:
-                if len(envbuildings) > 3:
+                if len(envbuildings) > 1:
                     for nbr in range(0, 3):
                         enemies.append(Wolf())
                     dave.wolfgrouptimer += 80 - (len(envbuildings) * 5)
 
-            if gmstate.game_time < 60:
+            if dave.xp > 25:
+                if framecounter % 1000 == 0:
+                    if len(loot) < 10:
+                        enemies.append(Wolf())
+
+            if dave.xp > 45:
+                if framecounter % 1000 == 0:
+                        enemies.append(Wolf())
+
+            if gmstate.game_time < 100:
                 if framecounter % 1000 == 0:
                     enemies.append(Bug())
+
+            if gmstate.game_time < 3:
+                if framecounter % 100 == 0:
+                    loot.append(Branch())
+                    loot.append(Rock())
 
             if framecounter % 1000 == 0:
                 if len(loot) < 10:
@@ -1443,6 +1457,9 @@ class Gamestate(StateMachine):
                 tent.update()
 
             for building in envbuildings:
+                if isinstance(building, Smalltower):
+                    if framecounter % 999 == 0:
+                        enemies.append(Wolf())
                 if building.building:
                     x1, y1 = building.pos
                     x2, y2 = dave.pos
@@ -1477,7 +1494,7 @@ class Gamestate(StateMachine):
         mousepos = pygame.mouse.get_pos()
         if self.is_menu:
             screen.clear()
-            # screen.fill('white')
+            screen.blit(pygame.image.load('images/menu-bg.png'), (0, 0))
             for optionbar in optionbars:
                 screen.draw.filled_rect(optionbar, (100, 200, 100))
             for selectbar in selectbars:
@@ -1755,7 +1772,7 @@ class Gamestate(StateMachine):
                 screen.draw.text('Repair TENT', (descbar.x, descbar.top + 15), anchor=(0.5, 0.5), color='black')
                 screen.draw.text('use near tent', (descbar.x, descbar.top + 30), anchor=(0.5, 0.5), color='black',
                                  fontsize=20)
-                screen.draw.text('with right-click', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black',
+                screen.draw.text('walk to it if not works', (descbar.x, descbar.top + 45), anchor=(0.5, 0.5), color='black',
                                  fontsize=18)
                 screen.draw.text('requirements:', (descbar.x, descbar.top + 60), anchor=(0.5, 0.5), color='black',
                                  fontsize=20)
